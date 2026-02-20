@@ -1,29 +1,44 @@
-# DigitalOcean App Platform Configuration
-#
-# Single component: backend + frontend built and served from one app (~$5/mo).
-# Uses root Dockerfile (frontend + backend) to build and serve from one app.
-#
-# SETUP: 1) Update GitHub repo below  2) Set secrets in console (docs/ENV_VARIABLES.md)
-#        3) After first deploy, set GOOGLE_REDIRECT_URI and FRONTEND_URL to your app URL
+# DigitalOcean App Platform – single-component fullstack (Dockerfile serves frontend + API)
+# IMPORTANT: Fullstack container listens on 8080; spec must use http_port: 8080.
+# After editing: paste this into App → Settings → App Spec → Edit, then Save.
 
-name: household-manager
-region: nyc  # Change to your preferred region: nyc, sfo, ams, sgp, fra, tor, blr
+name: lionfish-app
+region: nyc
+
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+
+features:
+  - buildpack-stack=ubuntu-22
+
+databases:
+  - engine: PG
+    name: dev-db-348203
+    version: "17"
+
+ingress:
+  rules:
+    - component:
+        name: householdmanager
+      match:
+        path:
+          prefix: /
 
 services:
-  # Single component: backend + frontend (root Dockerfile) — one app, ~$5/mo
-  - name: web
+  - name: householdmanager
     github:
-      repo: your-username/HouseholdManager  # ⚠️ UPDATE THIS: your GitHub username/repo
+      repo: yamikuronue/HouseholdManager
       branch: main
       deploy_on_push: true
-    
+
+    dockerfile_path: Dockerfile
+    source_dir: /
     http_port: 8080
+
     instance_count: 1
-    instance_size_slug: basic-xxs
-    
-    routes:
-      - path: /
-    
+    instance_size_slug: apps-s-1vcpu-1gb
+
     health_check:
       http_path: /health
       initial_delay_seconds: 10
@@ -31,74 +46,35 @@ services:
       timeout_seconds: 5
       success_threshold: 1
       failure_threshold: 3
-    
+
     envs:
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        value: ${dev-db-348203.DATABASE_URL}
+
       - key: GOOGLE_CLIENT_ID
         scope: RUN_TIME
         type: SECRET
         value: ${GOOGLE_CLIENT_ID}
-      
+
       - key: GOOGLE_CLIENT_SECRET
         scope: RUN_TIME
         type: SECRET
         value: ${GOOGLE_CLIENT_SECRET}
-      
+
       - key: SECRET_KEY
         scope: RUN_TIME
         type: SECRET
         value: ${SECRET_KEY}
-      
-      - key: DATABASE_URL
-        scope: RUN_TIME
-        type: SECRET
-        value: ${DATABASE_URL}
-      
+
       - key: GOOGLE_REDIRECT_URI
         scope: RUN_TIME
         value: https://lionfish-app-uhfes.ondigitalocean.app/api/auth/callback
-      
+
       - key: FRONTEND_URL
         scope: RUN_TIME
         value: https://lionfish-app-uhfes.ondigitalocean.app
-      
-      - key: API_HOST
-        scope: RUN_TIME
-        value: 0.0.0.0
-      
-      - key: API_PORT
-        scope: RUN_TIME
-        value: "8080"
-      
+
       - key: ENVIRONMENT
         scope: RUN_TIME
         value: production
-
-# ============================================
-# Managed Database (Optional but Recommended)
-# ============================================
-# Uncomment the section below to use a managed PostgreSQL database
-# The DATABASE_URL will be automatically set as an environment variable
-
-databases:
-  - name: household-manager-db
-    engine: PG
-    production: false  # Set to true for production
-    version: "15"
-    size_slug: db-s-dev-database  # Options: db-s-dev-database, db-s-1vcpu-1gb, db-s-1vcpu-2gb, etc.
-    # The DATABASE_URL will be automatically injected as an environment variable
-    # Format: postgresql://user:password@host:port/dbname?sslmode=require
-
-# ============================================
-# POST-DEPLOYMENT CHECKLIST
-# ============================================
-# After deploying, complete these steps:
-#
-# 1. App URL: https://lionfish-app-uhfes.ondigitalocean.app
-#
-# 2. Update Google Cloud Console:
-#    - Go to https://console.cloud.google.com/apis/credentials
-#    - Edit your OAuth 2.0 Client ID
-#    - Add authorized redirect URI: https://lionfish-app-uhfes.ondigitalocean.app/api/auth/callback
-#
-# 3. Redeploy or update environment variables in console
-# 4. Test: visit app URL, log in with Google, create household, add calendars

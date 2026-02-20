@@ -62,17 +62,22 @@ class Settings:
         # Frontend URL
         self.FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
     
+    @staticmethod
+    def _is_placeholder(val: Optional[str]) -> bool:
+        """True if value looks like an unsubstituted env placeholder (e.g. ${VAR})."""
+        if not val:
+            return True
+        return "${" in val and "}" in val
+
     def validate(self) -> list[str]:
-        """Validate required settings and return list of missing ones."""
+        """Validate required settings and return list of missing/invalid ones."""
         missing = []
-        
-        if not self.GOOGLE_CLIENT_ID:
-            missing.append("GOOGLE_CLIENT_ID")
-        if not self.GOOGLE_CLIENT_SECRET:
+        if not self.GOOGLE_CLIENT_ID or self._is_placeholder(self.GOOGLE_CLIENT_ID):
+            missing.append("GOOGLE_CLIENT_ID (set in App Platform env vars, not literal ${GOOGLE_CLIENT_ID})")
+        if not self.GOOGLE_CLIENT_SECRET or self._is_placeholder(self.GOOGLE_CLIENT_SECRET):
             missing.append("GOOGLE_CLIENT_SECRET")
-        if not self.SECRET_KEY or self.SECRET_KEY == "your-secret-key-change-in-production":
+        if not self.SECRET_KEY or self.SECRET_KEY == "your-secret-key-change-in-production" or self._is_placeholder(self.SECRET_KEY):
             missing.append("SECRET_KEY (must be set in production)")
-        
         return missing
     
     def is_production(self) -> bool:

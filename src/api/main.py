@@ -1,5 +1,6 @@
 """FastAPI application entry point."""
 
+import logging
 import os
 from pathlib import Path
 
@@ -13,15 +14,18 @@ from src.config import settings
 from src.api.routes import auth, calendars, events, households, invitations, members
 from src.db.session import init_db, run_migrations
 
+logger = logging.getLogger(__name__)
+
 
 # Directory for frontend static build (single-component deploy). Prefer /app/static in Docker.
 def _static_dir() -> Path:
     for candidate in (
-        Path("/app/static"),  # Dockerfile.fullstack copies here
+        Path("/app/static"),  # Fullstack Dockerfile copies here
         Path(__file__).resolve().parent.parent.parent / "static",
         Path(os.getcwd()) / "static",
     ):
-        if (candidate / "index.html").exists():
+        idx = candidate / "index.html"
+        if idx.exists():
             return candidate
     return Path(__file__).resolve().parent.parent.parent / "static"
 
@@ -34,6 +38,10 @@ async def lifespan(app: FastAPI):
     """Run on startup: apply migrations and create any missing tables."""
     run_migrations()  # Alembic upgrade head (no-op if no Alembic)
     init_db()         # SQLAlchemy create_all for any missing tables
+    # Log static dir so we can confirm SPA is served in fullstack deploy
+    _dir = STATIC_DIR
+    _idx = _dir / "index.html"
+    logger.info("Static dir: %s, exists=%s, index.html exists=%s", _dir, _dir.exists(), _idx.exists())
     yield
 
 
@@ -70,8 +78,24 @@ async def health():
 
 # Serve built frontend when static/ has index.html (single-component deploy)
 _has_static = STATIC_DIR.is_dir() and (STATIC_DIR / "index.html").exists()
+
+
+@app.get("/api/debug/static")
+async def debug_static():
+    """Debug: whether static build is being served (for SPA routes like /login)."""
+    return {
+        "static_dir": str(STATIC_DIR),
+        "static_dir_exists": STATIC_DIR.exists(),
+        "index_html_exists": (STATIC_DIR / "index.html").exists(),
+        "has_static": _has_static,
+    }
+
+
 if _has_static and (STATIC_DIR / "assets").is_dir():
     app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+elif _has_static:
+    # index.html present but no assets/ (e.g. inlined assets); still serve SPA
+    pass
 
 
 @app.get("/{full_path:path}")
@@ -80,13 +104,16 @@ async def serve_spa(full_path: str):
     if full_path.startswith("api/") or full_path == "api":
         raise HTTPException(status_code=404, detail="Not Found")
     if _has_static:
-        file_path = (STATIC_DIR / full_path).resolve()
-        if not str(file_path).startswith(str(STATIC_DIR.resolve())):
+        safe_path = full_path.strip("/") or "."
+        file_path = (STATIC_DIR / safe_path).resolve()
+        try:
+            file_path.resolve().relative_to(STATIC_DIR.resolve())
+        except ValueError:
             raise HTTPException(status_code=404, detail="Not Found")
         if file_path.is_file():
             return FileResponse(file_path)
         return FileResponse(STATIC_DIR / "index.html")
-    if full_path in ("", "/"):
+    if full_path in ("", "/") or full_path == ".":
         return {"message": "HouseholdManager API"}
     raise HTTPException(status_code=404, detail="Not Found")
 
