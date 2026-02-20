@@ -1,5 +1,6 @@
 """FastAPI application entry point."""
 
+import os
 from pathlib import Path
 
 from contextlib import asynccontextmanager
@@ -13,8 +14,19 @@ from src.api.routes import auth, calendars, events, households, invitations, mem
 from src.db.session import init_db, run_migrations
 
 
-# Directory for frontend static build when served from this app (single-component deploy)
-STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static"
+# Directory for frontend static build (single-component deploy). Prefer /app/static in Docker.
+def _static_dir() -> Path:
+    for candidate in (
+        Path("/app/static"),  # Dockerfile.fullstack copies here
+        Path(__file__).resolve().parent.parent.parent / "static",
+        Path(os.getcwd()) / "static",
+    ):
+        if (candidate / "index.html").exists():
+            return candidate
+    return Path(__file__).resolve().parent.parent.parent / "static"
+
+
+STATIC_DIR = _static_dir()
 
 
 @asynccontextmanager
@@ -56,20 +68,30 @@ async def health():
     return {"status": "healthy"}
 
 
-# Serve built frontend when static/ exists (single-component deploy)
-if STATIC_DIR.is_dir() and (STATIC_DIR / "index.html").exists():
+# Serve built frontend when static/ has index.html (single-component deploy)
+_has_static = STATIC_DIR.is_dir() and (STATIC_DIR / "index.html").exists()
+if _has_static and (STATIC_DIR / "assets").is_dir():
     app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
 
-    @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
-        """Serve index.html for non-API routes (SPA)."""
-        if full_path.startswith("api/") or full_path == "api":
+
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    """Serve index.html for SPA routes when static build exists; else 404 for unknown paths."""
+    if full_path.startswith("api/") or full_path == "api":
+        raise HTTPException(status_code=404, detail="Not Found")
+    if _has_static:
+        file_path = (STATIC_DIR / full_path).resolve()
+        if not str(file_path).startswith(str(STATIC_DIR.resolve())):
             raise HTTPException(status_code=404, detail="Not Found")
-        file_path = STATIC_DIR / full_path
         if file_path.is_file():
             return FileResponse(file_path)
         return FileResponse(STATIC_DIR / "index.html")
-else:
+    if full_path in ("", "/"):
+        return {"message": "HouseholdManager API"}
+    raise HTTPException(status_code=404, detail="Not Found")
+
+
+if not _has_static:
     @app.get("/")
     async def root():
         """Root endpoint when frontend is not bundled."""

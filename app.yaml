@@ -1,7 +1,7 @@
 # DigitalOcean App Platform Configuration
 #
 # Single component: backend + frontend built and served from one app (~$5/mo).
-# Uses Dockerfile.fullstack to build React and run FastAPI serving it.
+# Uses root Dockerfile (frontend + backend) to build and serve from one app.
 #
 # SETUP: 1) Update GitHub repo below  2) Set secrets in console (docs/ENV_VARIABLES.md)
 #        3) After first deploy, set GOOGLE_REDIRECT_URI and FRONTEND_URL to your app URL
@@ -10,14 +10,12 @@ name: household-manager
 region: nyc  # Change to your preferred region: nyc, sfo, ams, sgp, fra, tor, blr
 
 services:
-  # Single component: backend + frontend (Dockerfile.fullstack) — one app, ~$5/mo
+  # Single component: backend + frontend (root Dockerfile) — one app, ~$5/mo
   - name: web
     github:
       repo: your-username/HouseholdManager  # ⚠️ UPDATE THIS: your GitHub username/repo
       branch: main
       deploy_on_push: true
-    
-    dockerfile_path: Dockerfile.fullstack
     
     http_port: 8080
     instance_count: 1

@@ -2,13 +2,14 @@
 
 To pay for **only one** DigitalOcean app component, serve the React frontend from the FastAPI backend. No separate frontend service.
 
-## Option A: Use the fullstack Dockerfile on App Platform
+## Option A: Use the default Dockerfile on App Platform
+
+The repo’s root **Dockerfile** is the fullstack build (frontend + backend). App Platform uses it by default when you choose “Dockerfile” as the build type, so you don’t need to set a Dockerfile path.
 
 1. In DigitalOcean App Platform, create or edit your app.
-2. Set the **Source** to use the Dockerfile:
+2. Set the **Source**:
    - **Source**: GitHub, this repo, branch `main`
-   - **Resource Type**: **Dockerfile**
-   - **Dockerfile Path**: `Dockerfile.fullstack`
+   - **Resource Type**: **Dockerfile** (leave Dockerfile path blank so it uses the root `Dockerfile`)
 3. Remove the separate **frontend** service if you had one (one component only).
 4. Set **HTTP port** to `8080`.
 5. Set env vars as usual (see [ENV_VARIABLES.md](ENV_VARIABLES.md)); use the **same** app URL for:
@@ -18,9 +19,9 @@ To pay for **only one** DigitalOcean app component, serve the React frontend fro
 
 The Dockerfile builds the frontend (with API on same origin), then runs the backend. FastAPI serves the built React app from `/` and the API from `/api`.
 
-## Option B: Use app spec with Dockerfile
+## Option B: Use app spec
 
-In your `app.yaml` you can define a single service that uses the Dockerfile:
+In your `app.yaml` you can define a single service. The root `Dockerfile` is used by default (no `dockerfile_path` needed):
 
 ```yaml
 name: household-manager
@@ -31,7 +32,6 @@ services:
     github:
       repo: your-username/HouseholdManager
       branch: main
-    dockerfile_path: Dockerfile.fullstack
     http_port: 8080
     instance_count: 1
     instance_size_slug: basic-xxs
