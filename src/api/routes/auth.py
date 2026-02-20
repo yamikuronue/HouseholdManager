@@ -123,7 +123,7 @@ async def oauth_callback(code: str, db: Session = Depends(get_db)):
     db.refresh(user)
 
     jwt_token = create_access_token(user.id, user.email)
-    frontend_callback = f"{settings.FRONTEND_URL}/login/callback"
+    frontend_callback = f"{settings.frontend_base_url}/login/callback"
     return RedirectResponse(url=f"{frontend_callback}?token={jwt_token}")
 
 

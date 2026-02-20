@@ -59,9 +59,17 @@ class Settings:
             "your-secret-key-change-in-production"
         )
         
-        # Frontend URL
+        # Frontend URL (where to send user after OAuth; default localhost for dev)
         self.FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    
+
+    @property
+    def frontend_base_url(self) -> str:
+        """Base URL for post-OAuth redirect. Prefer deriving from GOOGLE_REDIRECT_URI in production."""
+        redirect = self.GOOGLE_REDIRECT_URI or ""
+        if "/api/auth/callback" in redirect:
+            return redirect.rsplit("/api/auth/callback", 1)[0].rstrip("/") or self.FRONTEND_URL
+        return self.FRONTEND_URL
+
     @staticmethod
     def _is_placeholder(val: Optional[str]) -> bool:
         """True if value looks like an unsubstituted env placeholder (e.g. ${VAR})."""

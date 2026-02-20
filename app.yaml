@@ -47,6 +47,7 @@ services:
       success_threshold: 1
       failure_threshold: 3
 
+    # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SECRET_KEY must be set under App-Level Environment Variables
     envs:
       - key: DATABASE_URL
         scope: RUN_TIME
@@ -54,7 +55,6 @@ services:
 
       - key: GOOGLE_CLIENT_ID
         scope: RUN_TIME
-        type: SECRET
         value: ${GOOGLE_CLIENT_ID}
 
       - key: GOOGLE_CLIENT_SECRET
@@ -62,11 +62,7 @@ services:
         type: SECRET
         value: ${GOOGLE_CLIENT_SECRET}
 
-      - key: SECRET_KEY
-        scope: RUN_TIME
-        type: SECRET
-        value: ${SECRET_KEY}
-
+      # Add SECRET_KEY in the component's Environment Variables (dashboard) so it's not resolved from app-level
       - key: GOOGLE_REDIRECT_URI
         scope: RUN_TIME
         value: https://lionfish-app-uhfes.ondigitalocean.app/api/auth/callback
