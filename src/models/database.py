@@ -1,21 +1,98 @@
-"""SQLAlchemy database models."""
+"""SQLAlchemy database models.
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
-from sqlalchemy.ext.declarative import declarative_base
+Data layout: Household → Member → Calendar; User holds Google identity and tokens.
+See DATA_MODEL.md for full design.
+"""
+
 from datetime import datetime
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
 
-class Calendar(Base):
-    """Calendar model for storing calendar configurations."""
-    __tablename__ = "calendars"
-    
+class User(Base):
+    """One per Google account. Holds OAuth identity and tokens."""
+
+    __tablename__ = "users"
+
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    google_calendar_id = Column(String, nullable=False, unique=True)
-    color = Column(String, nullable=True)
-    is_active = Column(Boolean, default=True)
-    refresh_token = Column(Text, nullable=True)  # Encrypted refresh token
+    google_sub = Column(String(255), unique=True, nullable=False, index=True)
+    email = Column(String(255), nullable=False)
+    display_name = Column(String(255), nullable=True)
+    avatar_url = Column(String(512), nullable=True)
+    refresh_token = Column(Text, nullable=True)  # Store encrypted in production
+    access_token = Column(Text, nullable=True)
+    token_expiry = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    memberships = relationship("Member", back_populates="user", cascade="all, delete-orphan")
+
+
+class Household(Base):
+    """Top-level container. One household has many members and a shared calendar view."""
+
+    __tablename__ = "households"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    members = relationship("Member", back_populates="household", cascade="all, delete-orphan")
+
+
+class Member(Base):
+    """Links a User to a Household. A user can be in multiple households."""
+
+    __tablename__ = "members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    household_id = Column(
+        Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False
+    )
+    role = Column(String(64), nullable=True)  # e.g. "owner", "member"
+    joined_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (UniqueConstraint("user_id", "household_id", name="uq_member_user_household"),)
+
+    user = relationship("User", back_populates="memberships")
+    household = relationship("Household", back_populates="members")
+    calendars = relationship(
+        "Calendar", back_populates="member", cascade="all, delete-orphan"
+    )
+
+
+class Calendar(Base):
+    """A Google calendar added by a member. Visible to all members of that household."""
+
+    __tablename__ = "calendars"
+
+    id = Column(Integer, primary_key=True, index=True)
+    member_id = Column(Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False)
+    google_calendar_id = Column(String(255), nullable=False)
+    name = Column(String(255), nullable=False)
+    color = Column(String(32), nullable=True)
+    is_visible = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("member_id", "google_calendar_id", name="uq_calendar_member_google"),
+    )
+
+    member = relationship("Member", back_populates="calendars")

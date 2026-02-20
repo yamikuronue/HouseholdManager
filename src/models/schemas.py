@@ -1,34 +1,113 @@
-"""Pydantic schemas for API requests and responses."""
+"""Pydantic schemas for API requests and responses.
 
-from pydantic import BaseModel
+Aligns with DATA_MODEL.md: User, Household, Member, Calendar.
+"""
+
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
-class CalendarBase(BaseModel):
-    """Base calendar schema."""
+# ----- User -----
+
+
+class UserBase(BaseModel):
+    """User fields from Google OAuth."""
+
+    email: str
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+class UserCreate(BaseModel):
+    """Created after OAuth; server fills google_sub and tokens."""
+
+    google_sub: str
+    email: str
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+class UserResponse(UserBase):
+    """User in API responses (no tokens)."""
+
+    id: int
+    google_sub: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- Household -----
+
+
+class HouseholdBase(BaseModel):
     name: str
-    google_calendar_id: str
-    color: Optional[str] = None
 
 
-class CalendarCreate(CalendarBase):
-    """Schema for creating a calendar."""
+class HouseholdCreate(HouseholdBase):
     pass
 
 
-class CalendarResponse(CalendarBase):
-    """Schema for calendar response."""
+class HouseholdResponse(HouseholdBase):
     id: int
-    is_active: bool
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- Member -----
+
+
+class MemberBase(BaseModel):
+    role: Optional[str] = None
+
+
+class MemberCreate(MemberBase):
+    user_id: int
+    household_id: int
+
+
+class MemberResponse(MemberBase):
+    id: int
+    user_id: int
+    household_id: int
+    joined_at: datetime
+    # Optional nested view
+    user: Optional[UserResponse] = None
+    household: Optional[HouseholdResponse] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- Calendar -----
+
+
+class CalendarBase(BaseModel):
+    name: str
+    google_calendar_id: str
+    color: Optional[str] = None
+    is_visible: bool = True
+
+
+class CalendarCreate(CalendarBase):
+    member_id: int
+
+
+class CalendarUpdate(BaseModel):
+    name: Optional[str] = None
+    color: Optional[str] = None
+    is_visible: Optional[bool] = None
+
+
+class CalendarResponse(CalendarBase):
+    id: int
+    member_id: int
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- Event (API/aggregation only, not stored) -----
 
 
 class EventBase(BaseModel):
-    """Base event schema."""
     title: str
     start: datetime
     end: datetime
@@ -37,11 +116,8 @@ class EventBase(BaseModel):
 
 
 class EventResponse(EventBase):
-    """Schema for event response."""
     id: str
     calendar_id: str
     calendar_name: str
     color: Optional[str] = None
-    
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

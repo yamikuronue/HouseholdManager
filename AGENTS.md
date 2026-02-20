@@ -1,0 +1,3 @@
+- put all docs in the docs folder
+- generate unit tests to get as close to 100% coverage as possible
+- this app is deployed on digital ocean

@@ -9,6 +9,8 @@ A household manager tool custom built for my household. Aggregates multiple Goog
 - 🐳 Fully containerized application
 - 🔐 Secure OAuth2 authentication
 
+**Live:** [https://lionfish-app-uhfes.ondigitalocean.app/](https://lionfish-app-uhfes.ondigitalocean.app/) · [API docs](https://lionfish-app-uhfes.ondigitalocean.app/docs) · See [DEPLOYMENT_URLS.md](DEPLOYMENT_URLS.md) for OAuth redirect URI.
+
 ## Architecture
 
 This application consists of:
@@ -186,8 +188,14 @@ API documentation available at `http://localhost:8000/docs` when running.
 python -m pytest test/
 ```
 
-### Database Migrations
-Currently using SQLAlchemy with automatic table creation. For production, consider using Alembic for migrations.
+### Database migrations
+On every app startup the app runs **Alembic** (`alembic upgrade head`) and then **create_all** for any missing tables. So the database is updated automatically when the app connects (e.g. on DigitalOcean deploy).
+
+To add a new migration after changing models:
+```bash
+alembic revision --autogenerate -m "describe change"
+alembic upgrade head   # optional locally; production runs this on startup
+```
 
 ## Deployment
 

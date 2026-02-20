@@ -1,14 +1,28 @@
 """FastAPI application entry point."""
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from src.config import settings
 from src.api.routes import calendars, events, auth
+from src.db.session import init_db, run_migrations
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Run on startup: apply migrations and create any missing tables."""
+    run_migrations()  # Alembic upgrade head (no-op if no Alembic)
+    init_db()         # SQLAlchemy create_all for any missing tables
+    yield
+
 
 app = FastAPI(
     title="HouseholdManager API",
     description="API for managing and aggregating Google Calendars",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Configure CORS

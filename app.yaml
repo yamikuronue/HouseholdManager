@@ -60,7 +60,7 @@ services:
       # Get these from: https://console.cloud.google.com/apis/credentials
       # 1. Create OAuth 2.0 Client ID
       # 2. Application type: Web application
-      # 3. Authorized redirect URIs: https://your-backend.ondigitalocean.app/api/auth/callback
+      # 3. Authorized redirect URIs: https://lionfish-app-uhfes.ondigitalocean.app/api/auth/callback
       - key: GOOGLE_CLIENT_ID
         scope: RUN_TIME
         type: SECRET  # ⚠️ Mark as encrypted in console
@@ -93,17 +93,15 @@ services:
       # ============================================
       
       # Google OAuth Redirect URI
-      # ⚠️ Update this after deployment with your actual backend URL
       # Must match the redirect URI configured in Google Cloud Console
       - key: GOOGLE_REDIRECT_URI
         scope: RUN_TIME
-        value: https://your-backend.ondigitalocean.app/api/auth/callback
+        value: https://lionfish-app-uhfes.ondigitalocean.app/api/auth/callback
       
-      # Frontend URL (for CORS)
-      # ⚠️ Update this after deployment with your actual frontend URL
+      # Frontend URL (for CORS); update if you have a separate frontend component
       - key: FRONTEND_URL
         scope: RUN_TIME
-        value: https://your-frontend.ondigitalocean.app
+        value: https://lionfish-app-uhfes.ondigitalocean.app
       
       # API Configuration
       - key: API_HOST
@@ -153,17 +151,14 @@ services:
     
     # Environment Variables
     envs:
-      # Backend API URL
-      # ⚠️ Update this after deployment with your actual backend URL
-      # This is used at build time by Vite, so it needs to be set before build
+      # Backend API URL (update if frontend is on a different component URL)
       - key: VITE_API_URL
         scope: BUILD_TIME  # Set at build time for Vite
-        value: https://your-backend.ondigitalocean.app
+        value: https://lionfish-app-uhfes.ondigitalocean.app
       
-      # Also set at runtime for preview server
       - key: VITE_API_URL
         scope: RUN_TIME
-        value: https://your-backend.ondigitalocean.app
+        value: https://lionfish-app-uhfes.ondigitalocean.app
 
 # ============================================
 # Managed Database (Optional but Recommended)
@@ -185,19 +180,14 @@ databases:
 # ============================================
 # After deploying, complete these steps:
 #
-# 1. Note your app URLs:
-#    - Backend: https://your-backend.ondigitalocean.app
-#    - Frontend: https://your-frontend.ondigitalocean.app
+# 1. App URL: https://lionfish-app-uhfes.ondigitalocean.app
 #
 # 2. Update Google Cloud Console:
 #    - Go to https://console.cloud.google.com/apis/credentials
 #    - Edit your OAuth 2.0 Client ID
-#    - Add authorized redirect URI: https://your-backend.ondigitalocean.app/api/auth/callback
+#    - Add authorized redirect URI: https://lionfish-app-uhfes.ondigitalocean.app/api/auth/callback
 #
-# 3. Update app.yaml with actual URLs:
-#    - Update GOOGLE_REDIRECT_URI with backend URL
-#    - Update FRONTEND_URL with frontend URL
-#    - Update VITE_API_URL with backend URL
+# 3. If you add a separate frontend component, update FRONTEND_URL and VITE_API_URL in envs
 #
 # 4. Redeploy or update environment variables in console
 #

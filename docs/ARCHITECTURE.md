@@ -117,6 +117,17 @@ HouseholdManager is a web application that aggregates multiple Google Calendars 
 - **Google OAuth 2.0**: For Google Calendar access
 - **JWT**: For session management (optional)
 
+## Data Model
+
+The data layout is documented in [DATA_MODEL.md](DATA_MODEL.md). Summary:
+
+- **Household** – Top-level container (e.g. "Smith Family").
+- **User** – One per Google account; holds OAuth identity and tokens.
+- **Member** – Links a User to a Household; a user can be in multiple households.
+- **Calendar** – A Google calendar added by a Member; visible to all members of that household.
+
+When a member adds a calendar, it is shown to every other member in the same household (no separate sharing table).
+
 ## Security Considerations
 
 1. **OAuth Tokens**: Store encrypted refresh tokens
