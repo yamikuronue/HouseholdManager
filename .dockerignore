@@ -38,8 +38,7 @@ build/
 .coverage
 htmlcov/
 
-# Frontend (for backend Dockerfile)
-frontend/
+# Frontend node_modules (root Dockerfile still needs frontend/ for fullstack build)
 node_modules/
 
 # Documentation
