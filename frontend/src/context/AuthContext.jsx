@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { getAuthMe } from '../services/api'
+import { getAuthMe, getGoogleAuthUrl } from '../services/api'
 
 const AuthContext = createContext(null)
 
@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
 
   const setToken = (token) => {
     localStorage.setItem(TOKEN_KEY, token)
-    loadUser()
+    return loadUser()
   }
 
   return (

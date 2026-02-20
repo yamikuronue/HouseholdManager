@@ -12,8 +12,11 @@ export default function LoginCallback() {
   useEffect(() => {
     const token = searchParams.get('token')
     if (token) {
-      setToken(token)
-      navigate('/dashboard', { replace: true })
+      setToken(token).then(() => {
+        navigate('/dashboard', { replace: true })
+      }).catch(() => {
+        setError('Failed to load user. Please try logging in again.')
+      })
     } else {
       setError('No token received. Please try logging in again.')
     }
