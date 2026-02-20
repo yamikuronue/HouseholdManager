@@ -209,7 +209,11 @@ alembic upgrade head   # optional locally; production runs this on startup
 
 ## Deployment
 
-### DigitalOcean App Platform
+### Cheapest on DigitalOcean (one component)
+
+To run **frontend + backend as a single app** (~$5/mo instead of two components): use `Dockerfile.fullstack` and follow [docs/SINGLE-COMPONENT-DEPLOY.md](docs/SINGLE-COMPONENT-DEPLOY.md). The backend serves the built React app and the API from the same URL.
+
+### DigitalOcean App Platform (two components)
 
 Complete deployment guide available in [docs/SETUP_DIGITALOCEAN.md](docs/SETUP_DIGITALOCEAN.md)
 

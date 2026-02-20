@@ -1,0 +1,35 @@
+# Single Dockerfile: build frontend, then run backend serving it (cheapest single-component deploy).
+# Use this on DigitalOcean by pointing the app at this Dockerfile so you only pay for one app.
+
+# ---- Frontend build ----
+FROM node:18-alpine AS frontend
+WORKDIR /app/frontend
+COPY frontend/package.json ./
+RUN npm install
+COPY frontend/ .
+# Same-origin API when served from backend (no separate frontend URL)
+ENV VITE_API_URL=
+RUN npm run build
+
+# ---- Backend + serve frontend ----
+FROM python:3.11-slim
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+COPY src/ ./src/
+COPY test/ ./test/
+COPY alembic.ini .
+COPY alembic/ ./alembic/
+
+# Copy built frontend into static/ so FastAPI can serve it
+RUN mkdir -p /app/static
+COPY --from=frontend /app/frontend/dist/. /app/static/
+
+EXPOSE 8080
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8080"]
