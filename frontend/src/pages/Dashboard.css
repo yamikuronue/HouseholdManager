@@ -1,0 +1,109 @@
+.dashboard h1 {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  color: #1a1a2e;
+}
+
+.dashboard-loading {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.dashboard-message {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.dashboard-error {
+  background: #fee;
+  color: #c00;
+}
+
+.dashboard-success {
+  background: #efe;
+  color: #060;
+}
+
+.dashboard-section {
+  background: #fff;
+  padding: 1.25rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.25rem;
+}
+
+.dashboard-section h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  color: #333;
+}
+
+.dashboard-form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dashboard-form input,
+.dashboard-form select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.dashboard-form input {
+  min-width: 180px;
+}
+
+.dashboard-form-inline select {
+  min-width: 160px;
+}
+
+.dashboard-form button {
+  padding: 0.5rem 1rem;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.dashboard-form button:hover {
+  background: #16213e;
+}
+
+.dashboard-form-column {
+  flex-direction: column;
+  align-items: stretch;
+  max-width: 400px;
+}
+
+.dashboard-form-column input,
+.dashboard-form-column select {
+  width: 100%;
+}
+
+.dashboard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dashboard-list li {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.dashboard-muted {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.dashboard-calendar {
+  margin-top: 1.5rem;
+}

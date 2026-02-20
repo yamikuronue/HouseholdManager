@@ -1,6 +1,6 @@
 """Pydantic schemas for API requests and responses.
 
-Aligns with DATA_MODEL.md: User, Household, Member, Calendar.
+Aligns with docs/DATA_MODEL.md: User, Household, Member, Calendar.
 """
 
 from datetime import datetime
@@ -48,6 +48,10 @@ class HouseholdCreate(HouseholdBase):
     pass
 
 
+class HouseholdUpdate(BaseModel):
+    name: Optional[str] = None
+
+
 class HouseholdResponse(HouseholdBase):
     id: int
     created_at: datetime
@@ -64,6 +68,10 @@ class MemberBase(BaseModel):
 class MemberCreate(MemberBase):
     user_id: int
     household_id: int
+
+
+class MemberUpdate(MemberBase):
+    role: Optional[str] = None
 
 
 class MemberResponse(MemberBase):
@@ -102,6 +110,35 @@ class CalendarResponse(CalendarBase):
     member_id: int
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+
+# ----- Invitation -----
+
+
+class InvitationCreate(BaseModel):
+    household_id: int
+    email: str
+    invited_by_member_id: int
+
+
+class InvitationResponse(BaseModel):
+    id: int
+    household_id: int
+    email: str
+    invited_by_member_id: int
+    token: str
+    status: str
+    sent_at: datetime
+    last_sent_at: datetime
+    accepted_at: Optional[datetime] = None
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InvitationAccept(BaseModel):
+    """Body when accepting an invite: token + user_id (the user joining)."""
+    token: str
+    user_id: int
 
 
 # ----- Event (API/aggregation only, not stored) -----

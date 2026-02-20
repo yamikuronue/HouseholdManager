@@ -18,8 +18,7 @@ function CalendarWidget() {
     try {
       setLoading(true)
       const data = await getEvents()
-      // Transform API events to FullCalendar format
-      const calendarEvents = data.events.map(event => ({
+      const calendarEvents = (data?.events ?? []).map((event) => ({
         id: event.id,
         title: event.title,
         start: event.start,

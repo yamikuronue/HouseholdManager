@@ -9,7 +9,7 @@ A household manager tool custom built for my household. Aggregates multiple Goog
 - 🐳 Fully containerized application
 - 🔐 Secure OAuth2 authentication
 
-**Live:** [https://lionfish-app-uhfes.ondigitalocean.app/](https://lionfish-app-uhfes.ondigitalocean.app/) · [API docs](https://lionfish-app-uhfes.ondigitalocean.app/docs) · See [DEPLOYMENT_URLS.md](DEPLOYMENT_URLS.md) for OAuth redirect URI.
+**Live:** [https://lionfish-app-uhfes.ondigitalocean.app/](https://lionfish-app-uhfes.ondigitalocean.app/) · [API docs](https://lionfish-app-uhfes.ondigitalocean.app/docs) · See [docs/DEPLOYMENT_URLS.md](docs/DEPLOYMENT_URLS.md) for OAuth redirect URI.
 
 ## Architecture
 
@@ -19,7 +19,7 @@ This application consists of:
 - **Database**: SQLite (can be upgraded to PostgreSQL)
 - **Integration**: Google Calendar API
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture documentation.
 
 ## Prerequisites
 
@@ -87,6 +87,8 @@ python src/main.py
 
 The API will be available at `http://localhost:8000`
 
+**Local SQLite:** The default `DATABASE_URL` is `sqlite:///./household_manager.db`, so the database file is created in the project root (and is in `.gitignore`). For a separate DB only for tests, pytest uses `household_manager_test.db` by default (see [Testing](#running-tests)).
+
 ### 4. Frontend Setup
 
 1. Navigate to the frontend directory:
@@ -106,18 +108,25 @@ npm run dev
 
 The frontend will be available at `http://localhost:3000`
 
+**Frontend features:** Login with Google (OAuth via backend), logout, create household (you are added as a member), send invites by email, accept invites via link (`/invite/accept?token=...`), and add calendars per household. The dashboard shows only households you belong to.
+
 ## Docker Deployment
 
-### Using Docker Compose (Recommended)
+### Using Docker Compose (recommended for local dev)
 
-1. Ensure your `.env` file is configured (see Setup step 2)
+Runs the app with **SQLite** in a `./data` directory (persisted on your machine; `data/` is in `.gitignore`).
 
-2. Build and run all services:
+1. Optional: copy `.env.example` to `.env` and set any needed variables (e.g. Google OAuth for full flow).
+2. Build and run:
 ```bash
 docker-compose up --build
 ```
 
-This will start both backend and frontend services.
+- **Backend:** http://localhost:8000  
+- **Frontend:** http://localhost:3000  
+- **SQLite file:** `./data/household_manager.db` (created on first run)
+
+To start with a fresh database, remove the `data` folder and run `docker-compose up` again.
 
 ### Using Docker individually
 
@@ -164,6 +173,7 @@ HouseholdManager/
 ├── requirements.txt       # Python dependencies
 ├── Dockerfile            # Backend Docker configuration
 ├── docker-compose.yml    # Full stack Docker setup
+├── docs/                 # Documentation (architecture, deployment, etc.)
 ├── .env.example          # Environment variables template
 └── README.md
 ```
@@ -201,11 +211,11 @@ alembic upgrade head   # optional locally; production runs this on startup
 
 ### DigitalOcean App Platform
 
-Complete deployment guide available in [SETUP_DIGITALOCEAN.md](SETUP_DIGITALOCEAN.md)
+Complete deployment guide available in [docs/SETUP_DIGITALOCEAN.md](docs/SETUP_DIGITALOCEAN.md)
 
 **Quick Start:**
 1. Update `app.yaml` with your GitHub repository
-2. Set secrets in DigitalOcean App Platform console (see [ENV_VARIABLES.md](ENV_VARIABLES.md))
+2. Set secrets in DigitalOcean App Platform console (see [docs/ENV_VARIABLES.md](docs/ENV_VARIABLES.md))
 3. Deploy via `doctl apps create --spec app.yaml` or web console
 4. Update Google Cloud Console with production redirect URI
 
@@ -215,7 +225,7 @@ Complete deployment guide available in [SETUP_DIGITALOCEAN.md](SETUP_DIGITALOCEA
 - `SECRET_KEY` (encrypted secret)
 - `DATABASE_URL` (encrypted secret, or use managed database)
 
-See [ENV_VARIABLES.md](ENV_VARIABLES.md) for complete reference.
+See [docs/ENV_VARIABLES.md](docs/ENV_VARIABLES.md) for complete reference.
 
 ### Credential Storage
 
@@ -225,7 +235,7 @@ See [ENV_VARIABLES.md](ENV_VARIABLES.md) for complete reference.
 - Mark sensitive values as "Encrypted" type
 - Never commit `.env` files to git
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed instructions.
 
 ## Next Steps
 

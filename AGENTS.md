@@ -1,3 +1,5 @@
 - put all docs in the docs folder
 - generate unit tests to get as close to 100% coverage as possible
 - this app is deployed on digital ocean
+- where possible keep the architecture simple
+- app views should be compatible with mobile phones

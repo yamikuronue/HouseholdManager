@@ -1,19 +1,32 @@
 import React from 'react'
-import CalendarWidget from './components/CalendarWidget'
-import CalendarList from './components/CalendarList'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Layout from './components/Layout'
+import ProtectedRoute from './components/ProtectedRoute'
+import Login from './pages/Login'
+import LoginCallback from './pages/LoginCallback'
+import Dashboard from './pages/Dashboard'
+import AcceptInvite from './pages/AcceptInvite'
 import './App.css'
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>HouseholdManager</h1>
-        <CalendarList />
-      </header>
-      <main>
-        <CalendarWidget />
-      </main>
-    </div>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/login/callback" element={<LoginCallback />} />
+      <Route path="/invite/accept" element={<AcceptInvite />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<Dashboard />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
 

@@ -45,7 +45,7 @@ One row per **Google account** (global). Holds OAuth identity and tokens so we o
 
 ### Household
 
-The top-level container. One household = one “home” with a shared view of all members’ calendars.
+The top-level container. One household = one "home" with a shared view of all members' calendars.
 
 | Field     | Type     | Description |
 |-----------|----------|-------------|
@@ -78,7 +78,7 @@ Links a **User** to a **Household**. A user can be in multiple households (e.g. 
 
 ### Calendar
 
-A Google calendar that a **member** has added to the app. It is shown to all members of that member’s household.
+A Google calendar that a **member** has added to the app. It is shown to all members of that member's household.
 
 | Field              | Type       | Description |
 |--------------------|------------|-------------|
@@ -91,25 +91,47 @@ A Google calendar that a **member** has added to the app. It is shown to all mem
 | created_at         | datetime   | |
 | updated_at         | datetime   | |
 
-**Constraints:** `(member_id, google_calendar_id)` unique (same calendar can’t be added twice by the same member).
+**Constraints:** `(member_id, google_calendar_id)` unique (same calendar can't be added twice by the same member).
+
+---
+
+### Invitation
+
+Tracks an invite (by email) to join a household. When the invite is accepted, a **Member** is created and the invitation is marked accepted.
+
+| Field                | Type        | Description |
+|----------------------|-------------|-------------|
+| id                   | PK          | Internal ID |
+| household_id         | FK Household| |
+| email                | string      | Invitee email |
+| invited_by_member_id | FK Member   | Member who sent the invite |
+| token                | string      | Unique token for the accept link |
+| status               | string      | `pending` \| `accepted` \| `expired` |
+| sent_at              | datetime    | When the invite was first sent |
+| last_sent_at         | datetime    | When it was last sent (updated on resend) |
+| accepted_at          | datetime?   | When it was accepted (null until then) |
+| created_at           | datetime    | |
+| updated_at           | datetime    | |
+
+**Accept flow:** Client calls `POST /api/invitations/accept` with `{ "token": "...", "user_id": <id> }`. Server creates `Member(user_id, household_id)` if not already a member, and sets `Invitation.status = "accepted"`, `accepted_at = now`.
 
 ---
 
 ## Sharing semantics
 
-- **“When a calendar is added, it is shared with every other member”** is implemented by **visibility by household**, not by a separate share table:
+- **"When a calendar is added, it is shared with every other member"** is implemented by **visibility by household**, not by a separate share table:
   - Calendars are stored per **Member** (who added them).
-  - For a given **Household**, “all calendars” = all calendars whose `member` belongs to that household.
+  - For a given **Household**, "all calendars" = all calendars whose `member` belongs to that household.
   - So when member A adds a calendar, it is immediately visible to members B, C, … in the same household.
-- No extra “CalendarShare” or “HouseholdCalendar” table is required for this behavior.
+- No extra "CalendarShare" or "HouseholdCalendar" table is required for this behavior.
 
-Optional future: use the Google Calendar API to **share the calendar** with other members’ Google accounts (e.g. “see this calendar in their own Google Calendar”). That would be an integration feature; the app’s aggregated view only needs the model above.
+Optional future: use the Google Calendar API to **share the calendar** with other members' Google accounts (e.g. "see this calendar in their own Google Calendar"). That would be an integration feature; the app's aggregated view only needs the model above.
 
 ---
 
 ## Query patterns
 
-1. **Current user’s households**  
+1. **Current user's households**  
    `Member` where `user_id = current_user_id`.
 
 2. **All members of a household**  
@@ -130,8 +152,8 @@ Optional future: use the Google Calendar API to **share the calendar** with othe
 
 - `User.google_sub` (unique, for login lookup).
 - `Member(user_id, household_id)` (unique).
-- `Member(household_id)` (for “all members” and “all calendars for household”).
-- `Calendar(member_id)` (for “member’s calendars”).
+- `Member(household_id)` (for "all members" and "all calendars for household").
+- `Calendar(member_id)` (for "member's calendars").
 - `Calendar(member_id, google_calendar_id)` (unique).
 
 These align with the query patterns above; exact index definitions can be added in migrations (e.g. Alembic) when you introduce them.

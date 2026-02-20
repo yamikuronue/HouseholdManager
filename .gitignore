@@ -173,6 +173,7 @@ __marimo__/
 household_manager.db
 household_manager.db-journal
 *.db
+data/
 *.sqlite
 *.sqlite3
 

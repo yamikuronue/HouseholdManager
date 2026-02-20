@@ -1,7 +1,7 @@
 """SQLAlchemy database models.
 
 Data layout: Household → Member → Calendar; User holds Google identity and tokens.
-See DATA_MODEL.md for full design.
+See docs/DATA_MODEL.md for full design.
 """
 
 from datetime import datetime
@@ -51,6 +51,9 @@ class Household(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     members = relationship("Member", back_populates="household", cascade="all, delete-orphan")
+    invitations = relationship(
+        "Invitation", back_populates="household", cascade="all, delete-orphan"
+    )
 
 
 class Member(Base):
@@ -75,6 +78,12 @@ class Member(Base):
     calendars = relationship(
         "Calendar", back_populates="member", cascade="all, delete-orphan"
     )
+    invitations_sent = relationship(
+        "Invitation",
+        back_populates="invited_by",
+        cascade="all, delete-orphan",
+        foreign_keys="Invitation.invited_by_member_id",
+    )
 
 
 class Calendar(Base):
@@ -96,3 +105,28 @@ class Calendar(Base):
     )
 
     member = relationship("Member", back_populates="calendars")
+
+
+class Invitation(Base):
+    """Invitation for someone (by email) to join a household. Accepted invite creates a Member."""
+
+    __tablename__ = "invitations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    household_id = Column(
+        Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False
+    )
+    email = Column(String(255), nullable=False)
+    invited_by_member_id = Column(
+        Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False
+    )
+    token = Column(String(64), unique=True, nullable=False, index=True)
+    status = Column(String(32), nullable=False, default="pending")  # pending | accepted | expired
+    sent_at = Column(DateTime, default=datetime.utcnow)
+    last_sent_at = Column(DateTime, default=datetime.utcnow)
+    accepted_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    household = relationship("Household", back_populates="invitations")
+    invited_by = relationship("Member", back_populates="invitations_sent")

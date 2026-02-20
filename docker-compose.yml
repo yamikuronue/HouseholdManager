@@ -1,3 +1,7 @@
+# Local development with SQLite. Database file is stored in ./data and persisted.
+# Usage: docker-compose up --build
+# Backend: http://localhost:8000  |  Frontend: http://localhost:3000
+
 version: '3.8'
 
 services:
@@ -8,16 +12,18 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///./household_manager.db
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      # SQLite in ./data (mounted below) so the DB persists across restarts
+      - DATABASE_URL=sqlite:///./data/household_manager.db
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:8000/api/auth/callback}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
-      - SECRET_KEY=${SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
     volumes:
       - ./src:/app/src
-      - ./household_manager.db:/app/household_manager.db
+      - ./data:/app/data
     command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+    # SQLite file will be at ./data/household_manager.db on your machine (./data is in .gitignore)
 
   frontend:
     build:

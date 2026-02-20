@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import settings
-from src.api.routes import calendars, events, auth
+from src.api.routes import auth, calendars, events, households, invitations, members
 from src.db.session import init_db, run_migrations
 
 
@@ -35,7 +35,10 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(households.router)
+app.include_router(members.router)
 app.include_router(calendars.router)
+app.include_router(invitations.router)
 app.include_router(events.router)
 app.include_router(auth.router)
 
