@@ -1,0 +1,199 @@
+# HouseholdManager Architecture
+
+## Overview
+
+HouseholdManager is a web application that aggregates multiple Google Calendars into a unified view. The application consists of a Python backend API and a frontend web interface.
+
+## System Architecture
+
+```
+┌─────────────────┐
+│   Frontend      │  React/HTML+JS
+│   (Browser)     │  Calendar Widget
+└────────┬────────┘
+         │ HTTP/REST API
+         │
+┌────────▼────────┐
+│   Backend API   │  FastAPI
+│   (Python)      │
+└────────┬────────┘
+         │
+    ┌────┴────┬──────────────┐
+    │         │              │
+┌───▼───┐ ┌──▼───┐    ┌─────▼─────┐
+│ SQLite│ │Google│    │  Config   │
+│  DB   │ │Calendar│   │  Files    │
+│       │ │  API  │    │           │
+└───────┘ └──────┘    └───────────┘
+```
+
+## Components
+
+### Backend (Python/FastAPI)
+
+#### 1. API Layer (`src/api/`)
+- RESTful endpoints for calendar operations
+- Authentication endpoints (OAuth2 flow)
+- Calendar management endpoints
+- Event retrieval endpoints
+
+**Key Endpoints:**
+- `GET /api/calendars` - List all configured calendars
+- `POST /api/calendars` - Add a new Google Calendar
+- `DELETE /api/calendars/{id}` - Remove a calendar
+- `GET /api/events` - Get aggregated events from all calendars
+- `GET /api/auth/google` - Initiate Google OAuth flow
+- `GET /api/auth/callback` - Handle OAuth callback
+
+#### 2. Services Layer (`src/services/`)
+- **GoogleCalendarService**: Handles Google Calendar API interactions
+- **CalendarAggregationService**: Merges events from multiple calendars
+- **AuthService**: Manages OAuth2 authentication flow
+
+#### 3. Models Layer (`src/models/`)
+- Database models (SQLAlchemy)
+- Pydantic schemas for API requests/responses
+- Calendar and Event data models
+
+#### 4. Database (`src/db/`)
+- SQLite database (can be upgraded to PostgreSQL)
+- Stores:
+  - Calendar configurations
+  - OAuth tokens (encrypted)
+  - User preferences
+
+### Frontend
+
+#### Structure (`frontend/`)
+- **React** (recommended) or **Vanilla JS**
+- Calendar widget component
+- Calendar management UI
+- OAuth flow handling
+
+**Key Components:**
+- CalendarWidget: Main calendar display
+- CalendarList: Manage connected calendars
+- EventCard: Display individual events
+- AuthButton: Google authentication
+
+## Data Flow
+
+1. **Authentication Flow:**
+   ```
+   User → Frontend → Backend → Google OAuth → Backend → Store Token → Frontend
+   ```
+
+2. **Event Retrieval Flow:**
+   ```
+   Frontend → Backend API → GoogleCalendarService → Google Calendar API
+   → Aggregate Events → Return JSON → Frontend → Render Calendar Widget
+   ```
+
+3. **Calendar Management:**
+   ```
+   User → Frontend → Backend API → Database → Store Calendar Config
+   ```
+
+## Technology Stack
+
+### Backend
+- **FastAPI**: Modern, fast web framework
+- **SQLAlchemy**: ORM for database operations
+- **google-api-python-client**: Google Calendar API client
+- **python-jose**: JWT token handling
+- **python-multipart**: Form data handling
+- **pydantic**: Data validation
+
+### Frontend
+- **React** (recommended) or **Vanilla JavaScript**
+- **FullCalendar.js** or **react-big-calendar**: Calendar widget library
+- **Axios**: HTTP client for API calls
+
+### Database
+- **SQLite**: Development (lightweight, file-based)
+- **PostgreSQL**: Production (optional upgrade)
+
+### Authentication
+- **Google OAuth 2.0**: For Google Calendar access
+- **JWT**: For session management (optional)
+
+## Security Considerations
+
+1. **OAuth Tokens**: Store encrypted refresh tokens
+2. **API Security**: Rate limiting, CORS configuration
+3. **Environment Variables**: Store sensitive configs in `.env`
+4. **Token Refresh**: Automatic token refresh before expiration
+
+## Project Structure
+
+```
+HouseholdManager/
+├── src/
+│   ├── api/              # FastAPI routes
+│   │   ├── __init__.py
+│   │   ├── routes/
+│   │   │   ├── calendars.py
+│   │   │   ├── events.py
+│   │   │   └── auth.py
+│   │   └── main.py       # FastAPI app
+│   ├── services/         # Business logic
+│   │   ├── __init__.py
+│   │   ├── google_calendar.py
+│   │   ├── calendar_aggregation.py
+│   │   └── auth.py
+│   ├── models/           # Data models
+│   │   ├── __init__.py
+│   │   ├── database.py   # SQLAlchemy models
+│   │   └── schemas.py    # Pydantic schemas
+│   ├── db/               # Database setup
+│   │   ├── __init__.py
+│   │   └── session.py
+│   └── config.py         # Configuration
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── CalendarWidget.jsx
+│   │   │   ├── CalendarList.jsx
+│   │   │   └── EventCard.jsx
+│   │   ├── services/
+│   │   │   └── api.js
+│   │   └── App.jsx
+│   └── package.json
+├── test/
+│   ├── unit/
+│   ├── integration/
+│   └── fixtures/
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml    # For full stack
+└── README.md
+```
+
+## Development Phases
+
+### Phase 1: Backend Foundation
+- Set up FastAPI application
+- Database models and migrations
+- Basic API structure
+
+### Phase 2: Google Calendar Integration
+- OAuth2 flow implementation
+- Google Calendar API client
+- Calendar listing and event retrieval
+
+### Phase 3: Calendar Aggregation
+- Merge events from multiple calendars
+- Handle timezone conversions
+- Event deduplication logic
+
+### Phase 4: Frontend
+- Calendar widget implementation
+- Calendar management UI
+- Event display
+
+### Phase 5: Polish & Deploy
+- Error handling
+- Loading states
+- Docker containerization
+- Deployment configuration

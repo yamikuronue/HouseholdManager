@@ -1,0 +1,51 @@
+.calendar-list {
+  margin-bottom: 20px;
+}
+
+.calendar-list h2 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.add-calendar-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.add-calendar-btn:hover {
+  background-color: #45a049;
+}
+
+.calendar-list ul {
+  list-style: none;
+}
+
+.calendar-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 5px;
+  border-radius: 4px;
+}
+
+.remove-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.remove-btn:hover {
+  background-color: #da190b;
+}

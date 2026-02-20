@@ -1,0 +1,207 @@
+# DigitalOcean App Platform Configuration
+# 
+# This app spec defines the HouseholdManager application for deployment on DigitalOcean App Platform.
+# It includes both backend (FastAPI) and frontend (React) services with Google Calendar API integration.
+#
+# SETUP INSTRUCTIONS:
+# 1. Update the GitHub repository references below (replace 'your-username/HouseholdManager')
+# 2. Set the following SECRET environment variables in App Platform console:
+#    - GOOGLE_CLIENT_ID (from Google Cloud Console)
+#    - GOOGLE_CLIENT_SECRET (from Google Cloud Console)
+#    - SECRET_KEY (generate using: python scripts/generate-secret-key.py)
+#    - DATABASE_URL (will be auto-generated if using managed database below)
+# 3. After first deployment, update GOOGLE_REDIRECT_URI and FRONTEND_URL with actual URLs
+# 4. Deploy: doctl apps create --spec app.yaml
+#    Or connect via App Platform web console and upload this file
+
+name: household-manager
+region: nyc  # Change to your preferred region: nyc, sfo, ams, sgp, fra, tor, blr
+
+services:
+  # Backend API Service (FastAPI)
+  - name: backend
+    github:
+      repo: your-username/HouseholdManager  # ⚠️ UPDATE THIS: Replace with your GitHub username/repo
+      branch: main
+      deploy_on_push: true
+    
+    source_dir: /
+    
+    # Build configuration
+    build_command: pip install --no-cache-dir --upgrade pip && pip install -r requirements.txt
+    
+    # Run configuration
+    run_command: uvicorn src.api.main:app --host 0.0.0.0 --port 8080
+    
+    environment_slug: python
+    instance_count: 1
+    instance_size_slug: basic-xxs  # Options: basic-xxs, basic-xs, basic-s, basic-m, etc.
+    
+    http_port: 8080
+    
+    routes:
+      - path: /
+    
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 10
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    
+    # Environment Variables
+    envs:
+      # ============================================
+      # REQUIRED SECRETS - Set these in App Platform console as encrypted secrets
+      # ============================================
+      
+      # Google Calendar API OAuth Credentials
+      # Get these from: https://console.cloud.google.com/apis/credentials
+      # 1. Create OAuth 2.0 Client ID
+      # 2. Application type: Web application
+      # 3. Authorized redirect URIs: https://your-backend.ondigitalocean.app/api/auth/callback
+      - key: GOOGLE_CLIENT_ID
+        scope: RUN_TIME
+        type: SECRET  # ⚠️ Mark as encrypted in console
+        value: ${GOOGLE_CLIENT_ID}  # Set in App Platform console
+      
+      - key: GOOGLE_CLIENT_SECRET
+        scope: RUN_TIME
+        type: SECRET  # ⚠️ Mark as encrypted in console
+        value: ${GOOGLE_CLIENT_SECRET}  # Set in App Platform console
+      
+      # Application Secret Key
+      # Generate using: python scripts/generate-secret-key.py
+      # Used for session encryption and JWT tokens
+      - key: SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET  # ⚠️ Mark as encrypted in console
+        value: ${SECRET_KEY}  # Set in App Platform console
+      
+      # Database Connection String
+      # Format: postgresql://user:password@host:port/dbname
+      # If using managed database below, this will be auto-populated
+      # Otherwise, set manually in console
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET  # ⚠️ Mark as encrypted in console
+        value: ${DATABASE_URL}  # Set in App Platform console or use managed DB below
+      
+      # ============================================
+      # CONFIGURATION - Update after first deployment
+      # ============================================
+      
+      # Google OAuth Redirect URI
+      # ⚠️ Update this after deployment with your actual backend URL
+      # Must match the redirect URI configured in Google Cloud Console
+      - key: GOOGLE_REDIRECT_URI
+        scope: RUN_TIME
+        value: https://your-backend.ondigitalocean.app/api/auth/callback
+      
+      # Frontend URL (for CORS)
+      # ⚠️ Update this after deployment with your actual frontend URL
+      - key: FRONTEND_URL
+        scope: RUN_TIME
+        value: https://your-frontend.ondigitalocean.app
+      
+      # API Configuration
+      - key: API_HOST
+        scope: RUN_TIME
+        value: 0.0.0.0
+      
+      - key: API_PORT
+        scope: RUN_TIME
+        value: "8080"
+      
+      # Environment indicator
+      - key: ENVIRONMENT
+        scope: RUN_TIME
+        value: production
+
+  # Frontend Service (React)
+  - name: frontend
+    github:
+      repo: your-username/HouseholdManager  # ⚠️ UPDATE THIS: Replace with your GitHub username/repo
+      branch: main
+      deploy_on_push: true
+    
+    source_dir: /frontend
+    
+    # Build configuration
+    build_command: npm ci && npm run build
+    
+    # Run configuration (serves built static files)
+    run_command: npm run preview -- --host 0.0.0.0 --port 3000
+    
+    environment_slug: node-js
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    
+    http_port: 3000
+    
+    routes:
+      - path: /
+    
+    health_check:
+      http_path: /
+      initial_delay_seconds: 10
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    
+    # Environment Variables
+    envs:
+      # Backend API URL
+      # ⚠️ Update this after deployment with your actual backend URL
+      # This is used at build time by Vite, so it needs to be set before build
+      - key: VITE_API_URL
+        scope: BUILD_TIME  # Set at build time for Vite
+        value: https://your-backend.ondigitalocean.app
+      
+      # Also set at runtime for preview server
+      - key: VITE_API_URL
+        scope: RUN_TIME
+        value: https://your-backend.ondigitalocean.app
+
+# ============================================
+# Managed Database (Optional but Recommended)
+# ============================================
+# Uncomment the section below to use a managed PostgreSQL database
+# The DATABASE_URL will be automatically set as an environment variable
+
+databases:
+  - name: household-manager-db
+    engine: PG
+    production: false  # Set to true for production
+    version: "15"
+    size_slug: db-s-dev-database  # Options: db-s-dev-database, db-s-1vcpu-1gb, db-s-1vcpu-2gb, etc.
+    # The DATABASE_URL will be automatically injected as an environment variable
+    # Format: postgresql://user:password@host:port/dbname?sslmode=require
+
+# ============================================
+# POST-DEPLOYMENT CHECKLIST
+# ============================================
+# After deploying, complete these steps:
+#
+# 1. Note your app URLs:
+#    - Backend: https://your-backend.ondigitalocean.app
+#    - Frontend: https://your-frontend.ondigitalocean.app
+#
+# 2. Update Google Cloud Console:
+#    - Go to https://console.cloud.google.com/apis/credentials
+#    - Edit your OAuth 2.0 Client ID
+#    - Add authorized redirect URI: https://your-backend.ondigitalocean.app/api/auth/callback
+#
+# 3. Update app.yaml with actual URLs:
+#    - Update GOOGLE_REDIRECT_URI with backend URL
+#    - Update FRONTEND_URL with frontend URL
+#    - Update VITE_API_URL with backend URL
+#
+# 4. Redeploy or update environment variables in console
+#
+# 5. Test the application:
+#    - Visit frontend URL
+#    - Try connecting a Google Calendar
+#    - Verify events are displayed
