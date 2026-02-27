@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   listMealSlots,
   listPlannedMeals,
   createOrUpdatePlannedMeal,
   deletePlannedMeal,
-  listMembers,
 } from '../services/api'
 import './MealPlanner.css'
 
@@ -26,30 +25,39 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
   const endDate = new Date(startDate)
   endDate.setDate(endDate.getDate() + numDays - 1)
 
-  const load = useCallback(async () => {
-    if (!householdId) return
-    setLoading(true)
-    setError('')
-    try {
-      const start = new Date(startDate)
-      const end = new Date(start)
-      end.setDate(end.getDate() + numDays - 1)
-      const [slotList, mealList] = await Promise.all([
-        listMealSlots(householdId),
-        listPlannedMeals(householdId, ISO_DATE(start), ISO_DATE(end)),
-      ])
-      setSlots(slotList)
-      setMeals(mealList)
-    } catch (e) {
-      setError(e.response?.data?.detail || e.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [householdId, startDate, numDays])
+  const loadRef = useRef(null)
 
   useEffect(() => {
-    load()
-  }, [load])
+    if (!householdId) return
+    let cancelled = false
+    const doLoad = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const start = new Date(startDate)
+        const end = new Date(start)
+        end.setDate(end.getDate() + numDays - 1)
+        const [slotList, mealList] = await Promise.all([
+          listMealSlots(householdId),
+          listPlannedMeals(householdId, ISO_DATE(start), ISO_DATE(end)),
+        ])
+        if (!cancelled) {
+          setSlots(slotList)
+          setMeals(mealList)
+        }
+      } catch (e) {
+        if (!cancelled) setError(e.response?.data?.detail || e.message)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    loadRef.current = doLoad
+    doLoad()
+    return () => {
+      cancelled = true
+      loadRef.current = null
+    }
+  }, [householdId, startDate.getTime(), numDays])
 
   const getMealFor = (dateStr, slotId) =>
     meals.find((m) => m.meal_date === dateStr && m.meal_slot_id === slotId)
@@ -69,7 +77,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
           member_id: myMemberId,
         })
       }
-      load()
+      if (loadRef.current) await loadRef.current()
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
     }
