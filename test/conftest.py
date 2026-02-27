@@ -5,6 +5,7 @@ import os
 os.environ["DATABASE_URL"] = os.getenv(
     "TEST_DATABASE_URL", "sqlite:///./household_manager_test.db"
 )
+os.environ["TESTING"] = "1"  # Skip Alembic migrations in app lifespan; init_db() creates schema
 
 import pytest
 from src.db.session import SessionLocal, init_db

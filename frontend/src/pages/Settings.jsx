@@ -11,6 +11,11 @@ import {
   deleteCalendar,
   getGoogleCalendars,
   updateMember,
+  updateHousehold,
+  listMealSlots,
+  createMealSlot,
+  updateMealSlot,
+  deleteMealSlot,
 } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import './Dashboard.css'
@@ -31,6 +36,9 @@ export default function Settings() {
   const [success, setSuccess] = useState('')
   const [myMembers, setMyMembers] = useState([])
   const [myCalendars, setMyCalendars] = useState([])
+  const [mealSlotsByHousehold, setMealSlotsByHousehold] = useState({})
+  const [newMealSlotName, setNewMealSlotName] = useState('')
+  const [newMealSlotHouseholdId, setNewMealSlotHouseholdId] = useState('')
 
   const DEFAULT_PASTEL_COLORS = [
     '#FFB3BA', '#BAFFC9', '#BAE1FF', '#FFFFBA',
@@ -47,13 +55,20 @@ export default function Settings() {
       ])
       const mine = allMembers.filter((m) => m.user_id === user.id)
       const myHouseholdIds = new Set(mine.map((m) => m.household_id))
-      setHouseholds(h.filter((hh) => myHouseholdIds.has(hh.id)))
+      const mineHouseholds = h.filter((hh) => myHouseholdIds.has(hh.id))
+      setHouseholds(mineHouseholds)
       setMyMembers(mine)
       setInvitations(inv)
       const calendarLists = await Promise.all(
         mine.map((m) => listCalendars({ member_id: m.id }))
       )
       setMyCalendars(calendarLists.flat())
+      const slotLists = await Promise.all(
+        mineHouseholds.map((hh) => listMealSlots(hh.id))
+      )
+      const slotsByH = {}
+      mineHouseholds.forEach((hh, i) => { slotsByH[hh.id] = slotLists[i] })
+      setMealSlotsByHousehold(slotsByH)
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
     } finally {
@@ -176,6 +191,57 @@ export default function Settings() {
     }
   }
 
+  const handleMealPlannerWeeksChange = async (householdId, weeks) => {
+    setError('')
+    try {
+      await updateHousehold(householdId, { meal_planner_weeks: weeks })
+      setHouseholds((prev) => prev.map((h) => (h.id === householdId ? { ...h, meal_planner_weeks: weeks } : h)))
+      setSuccess('Meal planner weeks updated.')
+      setTimeout(() => setSuccess(''), 2000)
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
+  const handleAddMealSlot = async (e) => {
+    e.preventDefault()
+    const hid = newMealSlotHouseholdId ? parseInt(newMealSlotHouseholdId, 10) : null
+    if (!newMealSlotName.trim() || !hid) {
+      setError('Select household and enter a meal type name.')
+      return
+    }
+    setError('')
+    try {
+      const slot = await createMealSlot({ household_id: hid, name: newMealSlotName.trim() })
+      setMealSlotsByHousehold((prev) => ({
+        ...prev,
+        [hid]: [...(prev[hid] || []), slot],
+      }))
+      setNewMealSlotName('')
+      setNewMealSlotHouseholdId('')
+      setSuccess('Meal type added.')
+      setTimeout(() => setSuccess(''), 2000)
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
+  const handleDeleteMealSlot = async (slot) => {
+    if (!window.confirm(`Remove "${slot.name}"? Planned meals for this slot will be removed.`)) return
+    setError('')
+    try {
+      await deleteMealSlot(slot.id)
+      setMealSlotsByHousehold((prev) => ({
+        ...prev,
+        [slot.household_id]: (prev[slot.household_id] || []).filter((s) => s.id !== slot.id),
+      }))
+      setSuccess('Meal type removed.')
+      setTimeout(() => setSuccess(''), 2000)
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
   const handleEventColorChange = async (memberId, hex) => {
     setError('')
     try {
@@ -228,8 +294,8 @@ export default function Settings() {
 
       {households.length > 0 && (
         <section className="dashboard-section">
-          <h2>Your event color</h2>
-          <p className="dashboard-muted">Events from your calendars will show in this color. Choose per household.</p>
+          <h2>Your color</h2>
+          <p className="dashboard-muted">Your calendar events and meal planner entries use this color. Choose per household.</p>
           {households.map((h) => {
             const myMember = myMembers.find((m) => m.household_id === h.id)
             if (!myMember) return null
@@ -373,6 +439,68 @@ export default function Settings() {
           <button type="submit" disabled={calendarListLoading}>Add calendar</button>
         </form>
       </section>
+
+      {households.length > 0 && (
+        <section className="dashboard-section">
+          <h2>Meal planner</h2>
+          <p className="dashboard-muted">Configure which meals appear and how many weeks to show on the dashboard.</p>
+          {households.map((h) => (
+            <div key={h.id} className="settings-meal-planner-household">
+              <strong>{h.name}</strong>
+              <div className="settings-meal-planner-weeks">
+                <span>Weeks to show:</span>
+                {[1, 2, 3, 4].map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    className={h.meal_planner_weeks === w ? 'settings-weeks-btn settings-weeks-btn-active' : 'settings-weeks-btn'}
+                    onClick={() => handleMealPlannerWeeksChange(h.id, w)}
+                  >
+                    {w}
+                  </button>
+                ))}
+              </div>
+              <div className="settings-meal-slots">
+                <span>Meal types (order):</span>
+                <ul className="dashboard-list settings-meal-slots-list">
+                  {(mealSlotsByHousehold[h.id] || []).map((slot) => (
+                    <li key={slot.id} className="settings-meal-slot-item">
+                      {slot.name}
+                      <button
+                        type="button"
+                        className="settings-remove-calendar-btn"
+                        onClick={() => handleDeleteMealSlot(slot)}
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))}
+          <form onSubmit={handleAddMealSlot} className="dashboard-form dashboard-form-inline">
+            <select
+              value={newMealSlotHouseholdId}
+              onChange={(e) => setNewMealSlotHouseholdId(e.target.value)}
+            >
+              <option value="">Select household</option>
+              {households.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Meal type (e.g. Snack)"
+              value={newMealSlotName}
+              onChange={(e) => setNewMealSlotName(e.target.value)}
+            />
+            <button type="submit">Add meal type</button>
+          </form>
+        </section>
+      )}
     </div>
   )
 }

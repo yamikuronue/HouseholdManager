@@ -45,6 +45,8 @@ def update_household(
         raise HTTPException(status_code=404, detail="Household not found")
     if body.name is not None:
         household.name = body.name
+    if body.meal_planner_weeks is not None:
+        household.meal_planner_weeks = max(1, min(4, body.meal_planner_weeks))
     db.commit()
     db.refresh(household)
     return household

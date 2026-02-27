@@ -51,6 +51,24 @@ export const getInvitationByToken = (token) => api.get(`/api/invitations/by-toke
 export const resendInvitation = (id) => api.post(`/api/invitations/resend/${id}`).then((r) => r.data)
 export const acceptInvitation = (body) => api.post('/api/invitations/accept', body).then((r) => r.data)
 
+// Meal planner
+export const listMealSlots = (householdId) =>
+  api.get('/api/meal-slots', { params: { household_id: householdId } }).then((r) => r.data)
+export const createMealSlot = (body) => api.post('/api/meal-slots', body).then((r) => r.data)
+export const updateMealSlot = (id, data) => api.patch(`/api/meal-slots/${id}`, data).then((r) => r.data)
+export const deleteMealSlot = (id) => api.delete(`/api/meal-slots/${id}`)
+export const listPlannedMeals = (householdId, startDate, endDate) =>
+  api.get('/api/planned-meals', {
+    params: {
+      household_id: householdId,
+      start_date: startDate,
+      end_date: endDate,
+    },
+  }).then((r) => r.data)
+export const createOrUpdatePlannedMeal = (body) =>
+  api.post('/api/planned-meals', body).then((r) => r.data)
+export const deletePlannedMeal = (id) => api.delete(`/api/planned-meals/${id}`)
+
 // Todos (household to-do list)
 export const listTodos = (householdId) =>
   api.get('/api/todos', { params: { household_id: householdId } }).then((r) => r.data)

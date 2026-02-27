@@ -1,5 +1,7 @@
 """Tests for household to-do list API and model."""
 
+import uuid
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -11,9 +13,11 @@ from src.models.database import Household, Member, TodoItem, User
 
 @pytest.fixture
 def user(db):
+    """Unique user per test so committed data from API doesn't cause UNIQUE violations."""
+    uid = uuid.uuid4().hex[:12]
     u = User(
-        google_sub="test-sub-123",
-        email="test@example.com",
+        google_sub=f"todo-{uid}",
+        email=f"todo-{uid}@example.com",
         display_name="Test User",
     )
     db.add(u)
@@ -123,8 +127,8 @@ def test_delete_todo(client, user, household, member, auth_headers, db):
 
     r2 = client.get("/api/todos", params={"household_id": household.id}, headers=auth_headers)
     assert r2.status_code == 200
-    ids = [x["id"] for x in r2.json()]
-    assert item.id not in ids
+    items = r2.json()
+    assert not any(x["content"] == "To remove" for x in items)
 
 
 def test_delete_todo_403_when_other_household(client, user, auth_headers, db):

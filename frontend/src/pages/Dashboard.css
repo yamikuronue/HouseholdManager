@@ -138,11 +138,28 @@
   color: #555;
 }
 
-.dashboard-todo-household select {
+.dashboard-todo-household select,
+.dashboard-household-select select {
   padding: 0.35rem 0.6rem;
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 0.9rem;
+}
+
+.dashboard-household-select {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-household-select label {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.dashboard-meal-planner {
+  margin-top: 1.5rem;
 }
 
 /* Settings: event color per household */
@@ -230,4 +247,49 @@
 }
 .settings-remove-calendar-btn:hover {
   background: #fee;
+}
+
+.settings-meal-planner-household {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+.settings-meal-planner-household:last-of-type {
+  border-bottom: none;
+}
+.settings-meal-planner-weeks {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.settings-weeks-btn {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.9rem;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.settings-weeks-btn:hover {
+  background: #e5e5e5;
+}
+.settings-weeks-btn-active {
+  background: #1a1a2e;
+  color: #fff;
+  border-color: #1a1a2e;
+}
+.settings-meal-slots {
+  margin-top: 0.5rem;
+}
+.settings-meal-slots-list {
+  margin-top: 0.25rem;
+  margin-left: 0.5rem;
+}
+.settings-meal-slot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }

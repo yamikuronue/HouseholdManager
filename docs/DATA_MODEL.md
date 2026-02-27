@@ -17,8 +17,13 @@ The data layout is centered on **Household** and **Member**. Each household has 
                              │
                       ┌──────▼──────┐       ┌─────────────┐
                       │  Household  │──1:*──│  TodoItem   │
-                      └─────────────┘       │ (to-do list)│
-                                            └─────────────┘
+                      │             │       └─────────────┘
+                      │             │       ┌─────────────┐
+                      │             │──1:*──│  MealSlot   │
+                      │             │       └─────────────┘
+                      │             │       ┌─────────────┐
+                      │             │──1:*──│ PlannedMeal │
+                      └─────────────┘       └─────────────┘
 ```
 
 ## Entities
@@ -48,12 +53,13 @@ One row per **Google account** (global). Holds OAuth identity and tokens so we o
 
 The top-level container. One household = one "home" with a shared view of all members' calendars and a shared to-do list.
 
-| Field     | Type     | Description |
-|-----------|----------|-------------|
-| id        | PK       | Internal ID |
-| name      | string   | e.g. "Smith Family" |
-| created_at| datetime | |
-| updated_at| datetime | |
+| Field               | Type     | Description |
+|---------------------|----------|-------------|
+| id                  | PK       | Internal ID |
+| name                | string   | e.g. "Smith Family" |
+| meal_planner_weeks  | int      | How many weeks to show in meal planner (1–4, default 2) |
+| created_at         | datetime | |
+| updated_at         | datetime | |
 
 Optional later: `invite_code` for inviting new members.
 
@@ -69,6 +75,7 @@ Links a **User** to a **Household**. A user can be in multiple households (e.g. 
 | user_id      | FK User  | |
 | household_id | FK Household | |
 | role         | string?  | e.g. "owner", "member" (for future use) |
+| event_color  | string?  | Global display color for this person (calendar events, meal planner) |
 | joined_at    | datetime | |
 | created_at   | datetime | |
 | updated_at   | datetime | |
@@ -140,6 +147,38 @@ A shared to-do list item for a **Household**. All members of the household see t
 
 ---
 
+### MealSlot
+
+A meal type for a household's meal planner (e.g. Breakfast, Lunch, Dinner). The household manager defines which meals appear and their order. Default for new households: Breakfast, Lunch, Dinner.
+
+| Field        | Type       | Description |
+|--------------|------------|-------------|
+| id           | PK         | Internal ID |
+| household_id | FK Household | |
+| name         | string     | e.g. "Breakfast" |
+| position     | int        | Display order (lower first) |
+| created_at   | datetime   | |
+
+---
+
+### PlannedMeal
+
+One planned meal on a given day and meal slot. Shows who added it (member); the UI uses the member's **global display color** (event_color) and their name.
+
+| Field        | Type       | Description |
+|--------------|------------|-------------|
+| id           | PK         | Internal ID |
+| household_id | FK Household | |
+| meal_date    | date       | The day (date only) |
+| meal_slot_id | FK MealSlot | Which meal (e.g. Lunch) |
+| member_id    | FK Member  | Who added it / who's responsible |
+| description  | string?    | Optional note |
+| created_at   | datetime   | |
+
+**Constraints:** `(household_id, meal_date, meal_slot_id)` unique (one planned meal per slot per day).
+
+---
+
 ## Sharing semantics
 
 - **"When a calendar is added, it is shared with every other member"** is implemented by **visibility by household**, not by a separate share table:
@@ -172,6 +211,9 @@ Optional future: use the Google Calendar API to **share the calendar** with othe
 6. **To-do list for a household**  
    `TodoItem` where `household_id = X`, ordered by `position`, `id`. Only members of that household may list/add/update/delete.
 
+7. **Meal planner**  
+   `MealSlot` where `household_id = X`, ordered by `position`. `PlannedMeal` where `household_id = X` and `meal_date` in range. Only members may list/add/update/delete. Default slots (Breakfast, Lunch, Dinner) are created when listing slots and none exist.
+
 ---
 
 ## Indexes (recommended)
@@ -182,5 +224,7 @@ Optional future: use the Google Calendar API to **share the calendar** with othe
 - `Calendar(member_id)` (for "member's calendars").
 - `Calendar(member_id, google_calendar_id)` (unique).
 - `TodoItem(household_id)` (for listing a household's to-do items).
+- `MealSlot(household_id)` (for listing a household's meal types).
+- `PlannedMeal(household_id)`, `PlannedMeal(meal_date)` (for listing planned meals in range).
 
 These align with the query patterns above; exact index definitions can be added in migrations (e.g. Alembic) when you introduce them.

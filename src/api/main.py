@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from src.config import settings
-from src.api.routes import auth, calendars, events, households, invitations, members, todos
+from src.api.routes import auth, calendars, events, households, invitations, meal_planner, members, todos
 from src.db.session import init_db, run_migrations
 
 logger = logging.getLogger(__name__)
@@ -36,8 +36,9 @@ STATIC_DIR = _static_dir()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Run on startup: apply migrations and create any missing tables."""
-    run_migrations()  # Alembic upgrade head (no-op if no Alembic)
-    init_db()         # SQLAlchemy create_all for any missing tables
+    if not os.getenv("TESTING"):
+        run_migrations()  # Alembic upgrade head (no-op if no Alembic)
+    init_db()  # SQLAlchemy create_all for any missing tables
     # Log static dir so we can confirm SPA is served in fullstack deploy
     _dir = STATIC_DIR
     _idx = _dir / "index.html"
@@ -68,6 +69,7 @@ app.include_router(calendars.router)
 app.include_router(invitations.router)
 app.include_router(events.router)
 app.include_router(todos.router)
+app.include_router(meal_planner.router)
 app.include_router(auth.router)
 
 

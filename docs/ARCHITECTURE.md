@@ -46,6 +46,13 @@ HouseholdManager is a web application that aggregates multiple Google Calendars 
 - `POST /api/todos` - Add a to-do item or section header
 - `PATCH /api/todos/{id}` - Update item (content, checked state, section header)
 - `DELETE /api/todos/{id}` - Remove a to-do item
+- `GET /api/meal-slots?household_id=` - List meal types (creates default Breakfast/Lunch/Dinner if none)
+- `POST /api/meal-slots` - Create meal type (household manager)
+- `PATCH /api/meal-slots/{id}` - Update meal type
+- `DELETE /api/meal-slots/{id}` - Delete meal type
+- `GET /api/planned-meals?household_id=&start_date=&end_date=` - List planned meals in range
+- `POST /api/planned-meals` - Create or replace planned meal (current user's member)
+- `DELETE /api/planned-meals/{id}` - Remove planned meal
 - `GET /api/auth/google` - Initiate Google OAuth flow
 - `GET /api/auth/callback` - Handle OAuth callback
 
@@ -78,8 +85,11 @@ HouseholdManager is a web application that aggregates multiple Google Calendars 
 - CalendarWidget: Main calendar display
 - CalendarList: Manage connected calendars
 - TodoList: Household to-do list (inline add, check off, delete; section headers)
+- MealPlanner: Weekly meal planner (configurable meal types and weeks; shows who added each meal with member name and global color)
 - EventCard: Display individual events
 - AuthButton: Google authentication
+
+Member **event_color** is used as a global display color (calendar events and meal planner entries).
 
 ## Data Flow
 
@@ -131,6 +141,8 @@ The data layout is documented in [DATA_MODEL.md](DATA_MODEL.md). Summary:
 - **Member** – Links a User to a Household; a user can be in multiple households.
 - **Calendar** – A Google calendar added by a Member; visible to all members of that household.
 - **TodoItem** – Shared to-do list item for a Household; section headers and regular items; checked-off items auto-removed after 7 days.
+- **MealSlot** – Meal type per household (e.g. Breakfast, Lunch, Dinner); order configurable by household manager.
+- **PlannedMeal** – One planned meal per day/slot; shows member (name and global display color).
 
 When a member adds a calendar, it is shown to every other member in the same household (no separate sharing table).
 
@@ -152,6 +164,7 @@ HouseholdManager/
 │   │   │   ├── calendars.py
 │   │   │   ├── events.py
 │   │   │   ├── todos.py
+│   │   │   ├── meal_planner.py
 │   │   │   └── auth.py
 │   │   └── main.py       # FastAPI app
 │   ├── services/         # Business logic
@@ -174,6 +187,7 @@ HouseholdManager/
 │   │   │   ├── CalendarWidget.jsx
 │   │   │   ├── CalendarList.jsx
 │   │   │   ├── TodoList.jsx
+│   │   │   ├── MealPlanner.jsx
 │   │   │   └── EventCard.jsx
 │   │   ├── services/
 │   │   │   └── api.js

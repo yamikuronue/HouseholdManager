@@ -50,10 +50,12 @@ class HouseholdCreate(HouseholdBase):
 
 class HouseholdUpdate(BaseModel):
     name: Optional[str] = None
+    meal_planner_weeks: Optional[int] = None
 
 
 class HouseholdResponse(HouseholdBase):
     id: int
+    meal_planner_weeks: Optional[int] = 2
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
@@ -142,6 +144,52 @@ class InvitationAccept(BaseModel):
     """Body when accepting an invite: token + user_id (the user joining)."""
     token: str
     user_id: int
+
+
+# ----- MealSlot -----
+
+
+class MealSlotCreate(BaseModel):
+    household_id: int
+    name: str
+    position: Optional[int] = None
+
+
+class MealSlotUpdate(BaseModel):
+    name: Optional[str] = None
+    position: Optional[int] = None
+
+
+class MealSlotResponse(BaseModel):
+    id: int
+    household_id: int
+    name: str
+    position: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- PlannedMeal -----
+
+
+class PlannedMealCreate(BaseModel):
+    household_id: int
+    meal_date: str  # ISO date "YYYY-MM-DD"
+    meal_slot_id: int
+    member_id: int
+    description: Optional[str] = None
+
+
+class PlannedMealResponse(BaseModel):
+    id: int
+    household_id: int
+    meal_date: str
+    meal_slot_id: int
+    member_id: int
+    member_display_name: Optional[str] = None
+    member_color: Optional[str] = None
+    description: Optional[str] = None
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ----- TodoItem -----

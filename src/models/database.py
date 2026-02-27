@@ -4,10 +4,11 @@ Data layout: Household → Member → Calendar; User holds Google identity and t
 See docs/DATA_MODEL.md for full design.
 """
 
-from datetime import datetime
+from datetime import datetime, date
 from sqlalchemy import (
     Boolean,
     Column,
+    Date,
     DateTime,
     ForeignKey,
     Integer,
@@ -47,6 +48,7 @@ class Household(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
+    meal_planner_weeks = Column(Integer, default=2)  # how many weeks to show (1 or 2)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -56,6 +58,12 @@ class Household(Base):
     )
     todo_items = relationship(
         "TodoItem", back_populates="household", cascade="all, delete-orphan"
+    )
+    meal_slots = relationship(
+        "MealSlot", back_populates="household", cascade="all, delete-orphan"
+    )
+    planned_meals = relationship(
+        "PlannedMeal", back_populates="household", cascade="all, delete-orphan"
     )
 
 
@@ -70,7 +78,7 @@ class Member(Base):
         Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False
     )
     role = Column(String(64), nullable=True)  # e.g. "owner", "member"
-    event_color = Column(String(32), nullable=True)  # hex for calendar event display
+    event_color = Column(String(32), nullable=True)  # global display color (calendar, meal planner)
     joined_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -154,3 +162,53 @@ class TodoItem(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     household = relationship("Household", back_populates="todo_items")
+
+
+class MealSlot(Base):
+    """A meal type for the household's meal planner (e.g. Breakfast, Lunch, Dinner). Order by position."""
+
+    __tablename__ = "meal_slots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    household_id = Column(
+        Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False
+    )
+    name = Column(String(64), nullable=False)
+    position = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    household = relationship("Household", back_populates="meal_slots")
+    planned_meals = relationship(
+        "PlannedMeal", back_populates="meal_slot", cascade="all, delete-orphan"
+    )
+
+
+class PlannedMeal(Base):
+    """One planned meal on a given day/slot. Shows who added it (member) and uses member's display color."""
+
+    __tablename__ = "planned_meals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    household_id = Column(
+        Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False
+    )
+    meal_date = Column(Date, nullable=False)
+    meal_slot_id = Column(
+        Integer, ForeignKey("meal_slots.id", ondelete="CASCADE"), nullable=False
+    )
+    member_id = Column(
+        Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False
+    )
+    description = Column(String(200), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "household_id", "meal_date", "meal_slot_id",
+            name="uq_planned_meal_household_date_slot",
+        ),
+    )
+
+    household = relationship("Household", back_populates="planned_meals")
+    meal_slot = relationship("MealSlot", back_populates="planned_meals")
+    member = relationship("Member")
