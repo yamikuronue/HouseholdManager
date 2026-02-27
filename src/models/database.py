@@ -67,6 +67,7 @@ class Member(Base):
         Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False
     )
     role = Column(String(64), nullable=True)  # e.g. "owner", "member"
+    event_color = Column(String(32), nullable=True)  # hex for calendar event display
     joined_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -67,6 +67,8 @@ def update_member(
         raise HTTPException(status_code=404, detail="Member not found")
     if body.role is not None:
         member.role = body.role
+    if body.event_color is not None:
+        member.event_color = body.event_color
     db.commit()
     db.refresh(member)
     return member

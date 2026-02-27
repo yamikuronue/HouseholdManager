@@ -97,6 +97,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 4. **Configure Database (Optional):**
    - If you uncommented the database section in `app.yaml`, it will be created automatically
    - The `DATABASE_URL` will be automatically injected
+   - **Migrations:** On every container start, the app runs `alembic upgrade head` before serving traffic, so new migrations (e.g. new columns) are applied automatically on each deploy. No extra step is required.
 
 5. **Deploy:**
    - Review your configuration

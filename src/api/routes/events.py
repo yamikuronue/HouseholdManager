@@ -100,7 +100,7 @@ async def get_events(
                     "description": item.get("description"),
                     "location": item.get("location"),
                     "calendar_name": cal.name,
-                    "color": cal.color,
+                    "color": (cal.member.event_color if cal.member else None) or cal.color,
                 })
 
     return {"events": all_events}

@@ -63,6 +63,7 @@ class HouseholdResponse(HouseholdBase):
 
 class MemberBase(BaseModel):
     role: Optional[str] = None
+    event_color: Optional[str] = None
 
 
 class MemberCreate(MemberBase):
@@ -72,6 +73,7 @@ class MemberCreate(MemberBase):
 
 class MemberUpdate(MemberBase):
     role: Optional[str] = None
+    event_color: Optional[str] = None
 
 
 class MemberResponse(MemberBase):
@@ -79,6 +81,7 @@ class MemberResponse(MemberBase):
     user_id: int
     household_id: int
     joined_at: datetime
+    event_color: Optional[str] = None
     # Optional nested view
     user: Optional[UserResponse] = None
     household: Optional[HouseholdResponse] = None

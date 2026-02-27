@@ -8,6 +8,7 @@ import {
   createInvitation,
   createCalendar,
   getGoogleCalendars,
+  updateMember,
 } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import './Dashboard.css'
@@ -26,6 +27,12 @@ export default function Settings() {
   const [selectedGoogleCalendarId, setSelectedGoogleCalendarId] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [myMembers, setMyMembers] = useState([])
+
+  const DEFAULT_PASTEL_COLORS = [
+    '#FFB3BA', '#BAFFC9', '#BAE1FF', '#FFFFBA',
+    '#E0BBE4', '#FFDFBA', '#B5EAD7', '#C7CEEA',
+  ]
 
   const load = async () => {
     if (!user) return
@@ -35,10 +42,10 @@ export default function Settings() {
         listInvitations(),
         listMembers(),
       ])
-      const myHouseholdIds = new Set(
-        allMembers.filter((m) => m.user_id === user.id).map((m) => m.household_id)
-      )
+      const mine = allMembers.filter((m) => m.user_id === user.id)
+      const myHouseholdIds = new Set(mine.map((m) => m.household_id))
       setHouseholds(h.filter((hh) => myHouseholdIds.has(hh.id)))
+      setMyMembers(mine)
       setInvitations(inv)
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
@@ -149,6 +156,20 @@ export default function Settings() {
     }
   }
 
+  const handleEventColorChange = async (memberId, hex) => {
+    setError('')
+    try {
+      await updateMember(memberId, { event_color: hex })
+      setMyMembers((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, event_color: hex } : m))
+      )
+      setSuccess('Event color updated.')
+      setTimeout(() => setSuccess(''), 2000)
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
   if (loading) return <div className="dashboard-loading">Loading…</div>
 
   return (
@@ -184,6 +205,45 @@ export default function Settings() {
           </ul>
         )}
       </section>
+
+      {households.length > 0 && (
+        <section className="dashboard-section">
+          <h2>Your event color</h2>
+          <p className="dashboard-muted">Events from your calendars will show in this color. Choose per household.</p>
+          {households.map((h) => {
+            const myMember = myMembers.find((m) => m.household_id === h.id)
+            if (!myMember) return null
+            const currentColor = myMember.event_color || DEFAULT_PASTEL_COLORS[0]
+            return (
+              <div key={h.id} className="settings-event-color-row">
+                <span className="settings-event-color-label">{h.name}</span>
+                <div className="settings-event-color-options">
+                  {DEFAULT_PASTEL_COLORS.map((hex) => (
+                    <button
+                      key={hex}
+                      type="button"
+                      className="settings-color-swatch"
+                      style={{ backgroundColor: hex }}
+                      title={hex}
+                      aria-label={`Use ${hex}`}
+                      onClick={() => handleEventColorChange(myMember.id, hex)}
+                    />
+                  ))}
+                  <label className="settings-color-picker-label">
+                    <input
+                      type="color"
+                      value={currentColor}
+                      onChange={(e) => handleEventColorChange(myMember.id, e.target.value)}
+                      className="settings-color-picker"
+                    />
+                    <span className="settings-color-picker-text">Custom</span>
+                  </label>
+                </div>
+              </div>
+            )
+          })}
+        </section>
+      )}
 
       <section className="dashboard-section">
         <h2>Send invite</h2>
