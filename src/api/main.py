@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from src.config import settings
-from src.api.routes import auth, calendars, events, households, invitations, meal_planner, members, todos
+from src.api.routes import auth, calendars, events, grocery_lists, households, invitations, meal_planner, members, todos
 from src.db.session import init_db, run_migrations
 
 logger = logging.getLogger(__name__)
@@ -70,6 +70,7 @@ app.include_router(invitations.router)
 app.include_router(events.router)
 app.include_router(todos.router)
 app.include_router(meal_planner.router)
+app.include_router(grocery_lists.router)
 app.include_router(auth.router)
 
 

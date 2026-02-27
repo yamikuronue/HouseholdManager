@@ -221,6 +221,55 @@ class TodoItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# ----- GroceryList -----
+
+
+class GroceryListCreate(BaseModel):
+    household_id: int
+    name: str
+
+
+class GroceryListUpdate(BaseModel):
+    name: Optional[str] = None
+
+
+class GroceryListResponse(BaseModel):
+    id: int
+    household_id: int
+    name: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- GroceryListItem -----
+
+
+class GroceryListItemCreate(BaseModel):
+    grocery_list_id: int
+    content: str
+    is_section_header: bool = False
+    position: Optional[int] = None
+    member_id: Optional[int] = None  # set by API from current user if not provided
+
+
+class GroceryListItemUpdate(BaseModel):
+    content: Optional[str] = None
+    is_section_header: Optional[bool] = None
+    position: Optional[int] = None
+
+
+class GroceryListItemResponse(BaseModel):
+    id: int
+    grocery_list_id: int
+    content: str
+    is_section_header: bool
+    position: int
+    member_id: Optional[int] = None
+    member_display_name: Optional[str] = None
+    member_color: Optional[str] = None
+    created_at: datetime
+
+
 # ----- Event (API/aggregation only, not stored) -----
 
 

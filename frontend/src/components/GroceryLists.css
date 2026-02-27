@@ -1,0 +1,264 @@
+.grocery-lists {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  min-height: 200px;
+}
+
+.grocery-lists-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grocery-lists-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.grocery-lists-title {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #333;
+}
+
+.grocery-lists-add-list {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.grocery-lists-add-list:hover {
+  background: #16213e;
+}
+
+.grocery-lists-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.grocery-lists-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  color: #555;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  margin-bottom: -1px;
+}
+
+.grocery-lists-tab:hover {
+  color: #333;
+}
+
+.grocery-lists-tab-active {
+  color: #1a1a2e;
+  font-weight: 600;
+  border-bottom-color: #1a1a2e;
+}
+
+.grocery-lists-tab-label {
+  flex: 1;
+}
+
+.grocery-lists-tab-delete {
+  padding: 0 0.2rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+}
+
+.grocery-lists-tab-delete:hover {
+  color: #c00;
+}
+
+.grocery-lists-error {
+  font-size: 0.9rem;
+  color: #c00;
+  margin-bottom: 0.5rem;
+}
+
+.grocery-lists-muted {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.grocery-lists-panel {
+  margin-top: 0.5rem;
+}
+
+.grocery-lists-items {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.5rem 0;
+}
+
+.grocery-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+
+.grocery-list-item:hover {
+  background: #f5f5f5;
+}
+
+.grocery-list-item-drag-handle {
+  flex-shrink: 0;
+  cursor: grab;
+  color: #999;
+  font-size: 0.9rem;
+  padding: 0.2rem;
+  user-select: none;
+}
+
+.grocery-list-item-drag-handle:active {
+  cursor: grabbing;
+}
+
+.grocery-list-item-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.grocery-list-item-section {
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  padding: 0.5rem 0.6rem;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-radius: 6px;
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+.grocery-list-item-section:hover {
+  background: linear-gradient(135deg, #dcedc8 0%, #a5d6a7 100%);
+}
+
+.grocery-list-item-section-text {
+  flex: 1;
+}
+
+.grocery-list-item-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.grocery-list-item-delete {
+  flex-shrink: 0;
+  padding: 0.2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5;
+  font-size: 1rem;
+}
+
+.grocery-list-item-delete:hover {
+  opacity: 1;
+}
+
+.grocery-list-item-dragging {
+  opacity: 0.5;
+}
+
+.grocery-list-item-drop-target {
+  outline: 2px dashed #1a1a2e;
+  outline-offset: 2px;
+}
+
+.grocery-lists-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.grocery-lists-add-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.grocery-lists-add-section {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #555;
+  cursor: pointer;
+}
+
+.grocery-lists-add-btn {
+  padding: 0.35rem 0.75rem;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.grocery-lists-add-btn:hover {
+  background: #16213e;
+}
+
+.grocery-lists-add-cancel {
+  padding: 0.35rem 0.75rem;
+  background: transparent;
+  color: #666;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.grocery-lists-add-cancel:hover {
+  background: #f0f0f0;
+}
+
+.grocery-lists-add-placeholder {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  background: #fafafa;
+  color: #888;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.grocery-lists-add-placeholder:hover {
+  background: #f0f0f0;
+  color: #666;
+}

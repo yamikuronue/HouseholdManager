@@ -3,6 +3,7 @@ import { listHouseholds, listMembers } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import CalendarWidget from '../components/CalendarWidget'
 import TodoList from '../components/TodoList'
+import GroceryLists from '../components/GroceryLists'
 import MealPlanner from '../components/MealPlanner'
 import './Dashboard.css'
 
@@ -77,13 +78,21 @@ export default function Dashboard() {
         </section>
       </div>
       {!loading && (
-        <section className="dashboard-section dashboard-meal-planner">
-          <MealPlanner
-            householdId={dashboardHouseholdId ?? (households[0]?.id ?? null)}
-            myMemberId={myMemberForHousehold?.id ?? null}
-            mealPlannerWeeks={mealPlannerWeeks}
-          />
-        </section>
+        <>
+          <section className="dashboard-section dashboard-grocery-lists">
+            <GroceryLists
+              householdId={dashboardHouseholdId ?? (households[0]?.id ?? null)}
+              myMemberId={myMemberForHousehold?.id ?? null}
+            />
+          </section>
+          <section className="dashboard-section dashboard-meal-planner">
+            <MealPlanner
+              householdId={dashboardHouseholdId ?? (households[0]?.id ?? null)}
+              myMemberId={myMemberForHousehold?.id ?? null}
+              mealPlannerWeeks={mealPlannerWeeks}
+            />
+          </section>
+        </>
       )}
     </div>
   )

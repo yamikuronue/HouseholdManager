@@ -76,6 +76,22 @@ export const createTodo = (body) => api.post('/api/todos', body).then((r) => r.d
 export const updateTodo = (id, data) => api.patch(`/api/todos/${id}`, data).then((r) => r.data)
 export const deleteTodo = (id) => api.delete(`/api/todos/${id}`)
 
+// Grocery lists
+export const listGroceryLists = (householdId) =>
+  api.get('/api/grocery-lists', { params: { household_id: householdId } }).then((r) => r.data)
+export const createGroceryList = (body) =>
+  api.post('/api/grocery-lists', body).then((r) => r.data)
+export const updateGroceryList = (id, data) =>
+  api.patch(`/api/grocery-lists/${id}`, data).then((r) => r.data)
+export const deleteGroceryList = (id) => api.delete(`/api/grocery-lists/${id}`)
+export const listGroceryListItems = (groceryListId) =>
+  api.get('/api/grocery-list-items', { params: { grocery_list_id: groceryListId } }).then((r) => r.data)
+export const createGroceryListItem = (body) =>
+  api.post('/api/grocery-list-items', body).then((r) => r.data)
+export const updateGroceryListItem = (id, data) =>
+  api.patch(`/api/grocery-list-items/${id}`, data).then((r) => r.data)
+export const deleteGroceryListItem = (id) => api.delete(`/api/grocery-list-items/${id}`)
+
 // Events (aggregated)
 export const getEvents = (startDate, endDate) => {
   const params = {}

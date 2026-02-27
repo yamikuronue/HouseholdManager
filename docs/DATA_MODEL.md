@@ -23,7 +23,10 @@ The data layout is centered on **Household** and **Member**. Each household has 
                       │             │       └─────────────┘
                       │             │       ┌─────────────┐
                       │             │──1:*──│ PlannedMeal │
-                      └─────────────┘       └─────────────┘
+                      │             │       └─────────────┘
+                      │             │       ┌─────────────┐       ┌──────────────────┐
+                      │             │──1:*──│ GroceryList  │──1:*──│ GroceryListItem  │
+                      └─────────────┘       └─────────────┘       └──────────────────┘
 ```
 
 ## Entities
@@ -179,6 +182,37 @@ One planned meal on a given day and meal slot. Shows who added it (member); the 
 
 ---
 
+### GroceryList
+
+A named grocery list for a household (e.g. "Groceries" by default, or "Costco"). One household has one or more lists; you cannot delete the last list.
+
+| Field        | Type       | Description |
+|--------------|------------|-------------|
+| id           | PK         | Internal ID |
+| household_id | FK Household | |
+| name         | string     | e.g. "Groceries", "Costco" |
+| created_at   | datetime   | |
+| updated_at   | datetime   | |
+
+---
+
+### GroceryListItem
+
+One item on a grocery list. Same pattern as to-do: section headers and regular items, ordered by `position`. `member_id` indicates who added the item (UI shows a dot in that member's global color).
+
+| Field             | Type       | Description |
+|-------------------|------------|-------------|
+| id                | PK         | Internal ID |
+| grocery_list_id   | FK GroceryList | |
+| content           | string     | Item or section title |
+| is_section_header | boolean    | Section header vs regular item |
+| position          | int        | Display order |
+| member_id         | FK Member? | Who added it (for color dot) |
+| created_at        | datetime   | |
+| updated_at        | datetime   | |
+
+---
+
 ## Sharing semantics
 
 - **"When a calendar is added, it is shared with every other member"** is implemented by **visibility by household**, not by a separate share table:
@@ -214,6 +248,9 @@ Optional future: use the Google Calendar API to **share the calendar** with othe
 7. **Meal planner**  
    `MealSlot` where `household_id = X`, ordered by `position`. `PlannedMeal` where `household_id = X` and `meal_date` in range. Only members may list/add/update/delete. Default slots (Breakfast, Lunch, Dinner) are created when listing slots and none exist.
 
+8. **Grocery lists**  
+   `GroceryList` where `household_id = X`. If none exist, a default list "Groceries" is created when listing. `GroceryListItem` where `grocery_list_id = Y`, ordered by `position`. Only members may list/add/update/delete. Cannot delete the last list.
+
 ---
 
 ## Indexes (recommended)
@@ -226,5 +263,7 @@ Optional future: use the Google Calendar API to **share the calendar** with othe
 - `TodoItem(household_id)` (for listing a household's to-do items).
 - `MealSlot(household_id)` (for listing a household's meal types).
 - `PlannedMeal(household_id)`, `PlannedMeal(meal_date)` (for listing planned meals in range).
+- `GroceryList(household_id)` (for listing a household's grocery lists).
+- `GroceryListItem(grocery_list_id)` (for listing a list's items).
 
 These align with the query patterns above; exact index definitions can be added in migrations (e.g. Alembic) when you introduce them.

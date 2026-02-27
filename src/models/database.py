@@ -65,6 +65,9 @@ class Household(Base):
     planned_meals = relationship(
         "PlannedMeal", back_populates="household", cascade="all, delete-orphan"
     )
+    grocery_lists = relationship(
+        "GroceryList", back_populates="household", cascade="all, delete-orphan"
+    )
 
 
 class Member(Base):
@@ -211,4 +214,45 @@ class PlannedMeal(Base):
 
     household = relationship("Household", back_populates="planned_meals")
     meal_slot = relationship("MealSlot", back_populates="planned_meals")
+    member = relationship("Member")
+
+
+class GroceryList(Base):
+    """A named grocery list for a household (e.g. Groceries, Costco). One household has many lists."""
+
+    __tablename__ = "grocery_lists"
+
+    id = Column(Integer, primary_key=True, index=True)
+    household_id = Column(
+        Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False
+    )
+    name = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    household = relationship("Household", back_populates="grocery_lists")
+    items = relationship(
+        "GroceryListItem", back_populates="grocery_list", cascade="all, delete-orphan"
+    )
+
+
+class GroceryListItem(Base):
+    """One item on a grocery list. Section headers and regular items; member_id shows who added it (for color dot)."""
+
+    __tablename__ = "grocery_list_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    grocery_list_id = Column(
+        Integer, ForeignKey("grocery_lists.id", ondelete="CASCADE"), nullable=False
+    )
+    content = Column(String(500), nullable=False)
+    is_section_header = Column(Boolean, default=False)
+    position = Column(Integer, default=0)
+    member_id = Column(
+        Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=True
+    )  # who added it; optional for section headers / legacy
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    grocery_list = relationship("GroceryList", back_populates="items")
     member = relationship("Member")

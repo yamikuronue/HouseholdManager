@@ -53,6 +53,14 @@ HouseholdManager is a web application that aggregates multiple Google Calendars 
 - `GET /api/planned-meals?household_id=&start_date=&end_date=` - List planned meals in range
 - `POST /api/planned-meals` - Create or replace planned meal (current user's member)
 - `DELETE /api/planned-meals/{id}` - Remove planned meal
+- `GET /api/grocery-lists?household_id=` - List grocery lists (creates default "Groceries" if none)
+- `POST /api/grocery-lists` - Create list (e.g. store name)
+- `PATCH /api/grocery-lists/{id}` - Update list name
+- `DELETE /api/grocery-lists/{id}` - Delete list (forbidden if last list)
+- `GET /api/grocery-list-items?grocery_list_id=` - List items for a list
+- `POST /api/grocery-list-items` - Add item (member_id for "who added" / color dot)
+- `PATCH /api/grocery-list-items/{id}` - Update item (content, position, section)
+- `DELETE /api/grocery-list-items/{id}` - Remove item
 - `GET /api/auth/google` - Initiate Google OAuth flow
 - `GET /api/auth/callback` - Handle OAuth callback
 
@@ -84,7 +92,8 @@ HouseholdManager is a web application that aggregates multiple Google Calendars 
 **Key Components:**
 - CalendarWidget: Main calendar display
 - CalendarList: Manage connected calendars
-- TodoList: Household to-do list (inline add, check off, delete; section headers)
+- TodoList: Household to-do list (inline add, check off, delete; section headers; drag-and-drop reorder)
+- GroceryLists: Tabbed grocery lists (multiple lists per household; section headers; drag-and-drop; colored dot per who added)
 - MealPlanner: Weekly meal planner (configurable meal types and weeks; shows who added each meal with member name and global color)
 - EventCard: Display individual events
 - AuthButton: Google authentication
@@ -143,6 +152,8 @@ The data layout is documented in [DATA_MODEL.md](DATA_MODEL.md). Summary:
 - **TodoItem** – Shared to-do list item for a Household; section headers and regular items; checked-off items auto-removed after 7 days.
 - **MealSlot** – Meal type per household (e.g. Breakfast, Lunch, Dinner); order configurable by household manager.
 - **PlannedMeal** – One planned meal per day/slot; shows member (name and global display color).
+- **GroceryList** – Named list per household (default "Groceries"; can add e.g. "Costco"). Cannot delete last list.
+- **GroceryListItem** – Item or section header; ordered by position; member_id for "who added" (UI shows colored dot).
 
 When a member adds a calendar, it is shown to every other member in the same household (no separate sharing table).
 
@@ -165,6 +176,7 @@ HouseholdManager/
 │   │   │   ├── events.py
 │   │   │   ├── todos.py
 │   │   │   ├── meal_planner.py
+│   │   │   ├── grocery_lists.py
 │   │   │   └── auth.py
 │   │   └── main.py       # FastAPI app
 │   ├── services/         # Business logic
@@ -188,6 +200,7 @@ HouseholdManager/
 │   │   │   ├── CalendarList.jsx
 │   │   │   ├── TodoList.jsx
 │   │   │   ├── MealPlanner.jsx
+│   │   │   ├── GroceryLists.jsx
 │   │   │   └── EventCard.jsx
 │   │   ├── services/
 │   │   │   └── api.js
