@@ -44,6 +44,24 @@ def decode_token(token: str) -> dict | None:
         return None
 
 
+def get_current_user(
+    authorization: str | None = Header(None),
+    db: Session = Depends(get_db),
+) -> User:
+    """Dependency: current user from Bearer token. Raises 401 if missing or invalid."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    token = authorization.replace("Bearer ", "").strip()
+    payload = decode_token(token)
+    if not payload or "sub" not in payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    user_id = int(payload["sub"])
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+
 @router.get("/google")
 async def initiate_google_auth():
     """Redirect to Google OAuth. After login, Google redirects to /api/auth/callback."""
@@ -152,3 +170,37 @@ def get_current_user_info(
         "avatar_url": user.avatar_url,
         "google_sub": user.google_sub,
     }
+
+
+@router.get("/google-calendars")
+async def list_google_calendars(current_user: User = Depends(get_current_user)):
+    """
+    List the current user's Google calendars (for adding to a household).
+    Uses the user's stored Google access token.
+    """
+    if not current_user.access_token:
+        raise HTTPException(
+            status_code=400,
+            detail="No Google access token. Sign out and sign in again with Google to grant calendar access.",
+        )
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            "https://www.googleapis.com/calendar/v3/users/me/calendarList",
+            headers={"Authorization": f"Bearer {current_user.access_token}"},
+        )
+    if resp.status_code == 401:
+        raise HTTPException(
+            status_code=401,
+            detail="Google token expired or invalid. Sign out and sign in again.",
+        )
+    if resp.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Google Calendar API error: {resp.status_code}",
+        )
+    data = resp.json()
+    items = data.get("items") or []
+    return [
+        {"id": item["id"], "summary": item.get("summary", item["id"])}
+        for item in items
+    ]

@@ -7,6 +7,7 @@ import {
   listInvitations,
   createInvitation,
   createCalendar,
+  getGoogleCalendars,
 } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import CalendarWidget from '../components/CalendarWidget'
@@ -21,8 +22,9 @@ export default function Dashboard() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteHouseholdId, setInviteHouseholdId] = useState('')
   const [calendarHouseholdId, setCalendarHouseholdId] = useState('')
-  const [calendarName, setCalendarName] = useState('')
-  const [calendarGoogleId, setCalendarGoogleId] = useState('')
+  const [googleCalendars, setGoogleCalendars] = useState([])
+  const [calendarListLoading, setCalendarListLoading] = useState(false)
+  const [selectedGoogleCalendarId, setSelectedGoogleCalendarId] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -49,6 +51,23 @@ export default function Dashboard() {
   useEffect(() => {
     if (user) load()
     else setLoading(false)
+  }, [user])
+
+  const loadGoogleCalendars = async () => {
+    if (!user) return
+    setCalendarListLoading(true)
+    try {
+      const list = await getGoogleCalendars()
+      setGoogleCalendars(list)
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    } finally {
+      setCalendarListLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (user) loadGoogleCalendars()
   }, [user])
 
   const handleCreateHousehold = async (e) => {
@@ -101,8 +120,13 @@ export default function Dashboard() {
     setError('')
     setSuccess('')
     const hid = calendarHouseholdId ? parseInt(calendarHouseholdId, 10) : null
-    if (!calendarName.trim() || !calendarGoogleId.trim() || !hid) {
-      setError('Select household, calendar name, and Google calendar ID.')
+    if (!selectedGoogleCalendarId || !hid) {
+      setError('Select household and a calendar.')
+      return
+    }
+    const selected = googleCalendars.find((c) => c.id === selectedGoogleCalendarId)
+    if (!selected) {
+      setError('Selected calendar not found. Please pick one from the list.')
       return
     }
     const members = await listMembers(hid)
@@ -114,12 +138,11 @@ export default function Dashboard() {
     try {
       await createCalendar({
         member_id: me.id,
-        name: calendarName.trim(),
-        google_calendar_id: calendarGoogleId.trim(),
+        name: selected.summary,
+        google_calendar_id: selected.id,
         is_visible: true,
       })
-      setCalendarName('')
-      setCalendarGoogleId('')
+      setSelectedGoogleCalendarId('')
       setSuccess('Calendar added.')
       load()
     } catch (e) {
@@ -218,19 +241,21 @@ export default function Dashboard() {
               </option>
             ))}
           </select>
-          <input
-            type="text"
-            placeholder="Calendar name"
-            value={calendarName}
-            onChange={(e) => setCalendarName(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Google Calendar ID (e.g. primary)"
-            value={calendarGoogleId}
-            onChange={(e) => setCalendarGoogleId(e.target.value)}
-          />
-          <button type="submit">Add calendar</button>
+          <select
+            value={selectedGoogleCalendarId}
+            onChange={(e) => setSelectedGoogleCalendarId(e.target.value)}
+            disabled={calendarListLoading}
+          >
+            <option value="">
+              {calendarListLoading ? 'Loading your calendars…' : 'Select a Google calendar'}
+            </option>
+            {googleCalendars.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.summary}
+              </option>
+            ))}
+          </select>
+          <button type="submit" disabled={calendarListLoading}>Add calendar</button>
         </form>
       </section>
 

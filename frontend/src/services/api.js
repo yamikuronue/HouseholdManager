@@ -17,6 +17,8 @@ api.interceptors.request.use((config) => {
 // Auth
 export const getAuthMe = () => api.get('/api/auth/me').then((r) => r.data)
 export const getGoogleAuthUrl = () => `${API_BASE_URL}/api/auth/google`
+export const getGoogleCalendars = () =>
+  api.get('/api/auth/google-calendars').then((r) => r.data)
 
 // Households
 export const listHouseholds = () => api.get('/api/households').then((r) => r.data)
