@@ -19,9 +19,11 @@ export function AuthProvider({ children }) {
     try {
       const data = await getAuthMe()
       setUser(data)
-    } catch {
+    } catch (err) {
       localStorage.removeItem(TOKEN_KEY)
       setUser(null)
+      setLoading(false)
+      throw err
     } finally {
       setLoading(false)
     }
