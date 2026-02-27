@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import LoginCallback from './pages/LoginCallback'
 import Dashboard from './pages/Dashboard'
+import Settings from './pages/Settings'
 import AcceptInvite from './pages/AcceptInvite'
 import './App.css'
 
@@ -24,6 +25,7 @@ function App() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

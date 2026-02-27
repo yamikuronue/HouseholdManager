@@ -22,6 +22,7 @@ export default function Layout() {
           {user && (
             <>
               <Link to="/dashboard">Dashboard</Link>
+              <Link to="/settings">Settings</Link>
               <span className="layout-user">{user.display_name || user.email}</span>
               <button type="button" className="layout-logout" onClick={handleLogout}>
                 Logout
