@@ -7,6 +7,8 @@ import {
   listInvitations,
   createInvitation,
   createCalendar,
+  listCalendars,
+  deleteCalendar,
   getGoogleCalendars,
   updateMember,
 } from '../services/api'
@@ -28,6 +30,7 @@ export default function Settings() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [myMembers, setMyMembers] = useState([])
+  const [myCalendars, setMyCalendars] = useState([])
 
   const DEFAULT_PASTEL_COLORS = [
     '#FFB3BA', '#BAFFC9', '#BAE1FF', '#FFFFBA',
@@ -47,6 +50,10 @@ export default function Settings() {
       setHouseholds(h.filter((hh) => myHouseholdIds.has(hh.id)))
       setMyMembers(mine)
       setInvitations(inv)
+      const calendarLists = await Promise.all(
+        mine.map((m) => listCalendars({ member_id: m.id }))
+      )
+      setMyCalendars(calendarLists.flat())
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
     } finally {
@@ -151,6 +158,19 @@ export default function Settings() {
       setSelectedGoogleCalendarId('')
       setSuccess('Calendar added.')
       load()
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
+  const handleRemoveCalendar = async (calendar) => {
+    if (!window.confirm(`Remove "${calendar.name}" from this household? It will stay in your Google account; only the link here is removed.`)) return
+    setError('')
+    try {
+      await deleteCalendar(calendar.id)
+      setMyCalendars((prev) => prev.filter((c) => c.id !== calendar.id))
+      setSuccess('Calendar removed from household.')
+      setTimeout(() => setSuccess(''), 2000)
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
     }
@@ -282,6 +302,42 @@ export default function Settings() {
                   {i.email} – last sent {new Date(i.last_sent_at).toLocaleDateString()}
                 </li>
               ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="dashboard-section">
+        <h2>Your calendars</h2>
+        <p className="dashboard-muted">Calendars linked to this household. Removing one only unlinks it here; it stays in your Google account.</p>
+        {myCalendars.length === 0 ? (
+          <p className="dashboard-muted">No calendars added yet. Add one below.</p>
+        ) : (
+          <ul className="dashboard-list">
+            {households.map((h) => {
+              const myMember = myMembers.find((m) => m.household_id === h.id)
+              const cals = myCalendars.filter((c) => c.member_id === myMember?.id)
+              if (cals.length === 0) return null
+              return (
+                <li key={h.id} className="settings-calendar-household">
+                  <strong>{h.name}</strong>
+                  <ul className="dashboard-list settings-calendar-sublist">
+                    {cals.map((cal) => (
+                      <li key={cal.id} className="settings-calendar-item">
+                        <span>{cal.name}</span>
+                        <button
+                          type="button"
+                          className="settings-remove-calendar-btn"
+                          onClick={() => handleRemoveCalendar(cal)}
+                          title="Remove from household (stays in Google)"
+                        >
+                          Remove from household
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>
