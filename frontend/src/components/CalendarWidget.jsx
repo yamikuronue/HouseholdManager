@@ -8,10 +8,8 @@ import './CalendarWidget.css'
 
 function CalendarWidget() {
   const [events, setEvents] = useState([])
-  const [loading, setLoading] = useState(true)
 
   const loadEvents = useCallback((start, end) => {
-    setLoading(true)
     getEvents(start, end)
       .then((data) => {
         const calendarEvents = (data?.events ?? []).map((event) => ({
@@ -30,7 +28,6 @@ function CalendarWidget() {
         setEvents(calendarEvents)
       })
       .catch((err) => console.error('Error loading events:', err))
-      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -44,7 +41,6 @@ function CalendarWidget() {
           right: 'dayGridMonth,timeGridWeek,timeGridDay'
         }}
         events={events}
-        loading={loading}
         height="auto"
         datesSet={(info) => loadEvents(info.start, info.end)}
         eventClick={(info) => {
