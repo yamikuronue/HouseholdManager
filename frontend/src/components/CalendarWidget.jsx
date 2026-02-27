@@ -7,17 +7,12 @@ import { getEvents } from '../services/api'
 import './CalendarWidget.css'
 
 function CalendarWidget() {
-  const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadEvents()
-  }, [])
-
-  const loadEvents = async () => {
+  const fetchEvents = async (fetchInfo, successCallback, failureCallback) => {
     try {
       setLoading(true)
-      const data = await getEvents()
+      const data = await getEvents(fetchInfo.start, fetchInfo.end)
       const calendarEvents = (data?.events ?? []).map((event) => ({
         id: event.id,
         title: event.title,
@@ -31,16 +26,13 @@ function CalendarWidget() {
           calendarName: event.calendar_name
         }
       }))
-      setEvents(calendarEvents)
+      successCallback(calendarEvents)
     } catch (error) {
       console.error('Error loading events:', error)
+      failureCallback(error)
     } finally {
       setLoading(false)
     }
-  }
-
-  if (loading) {
-    return <div className="loading">Loading calendar...</div>
   }
 
   return (
@@ -53,7 +45,8 @@ function CalendarWidget() {
           center: 'title',
           right: 'dayGridMonth,timeGridWeek,timeGridDay'
         }}
-        events={events}
+        events={fetchEvents}
+        loading={loading}
         height="auto"
         eventClick={(info) => {
           alert(`Event: ${info.event.title}\nCalendar: ${info.event.extendedProps.calendarName}`)
