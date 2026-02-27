@@ -15,9 +15,10 @@ The data layout is centered on **Household** and **Member**. Each household has 
                              │
                              │ *:1
                              │
-                      ┌──────▼──────┐
-                      │  Household  │
-                      └─────────────┘
+                      ┌──────▼──────┐       ┌─────────────┐
+                      │  Household  │──1:*──│  TodoItem   │
+                      └─────────────┘       │ (to-do list)│
+                                            └─────────────┘
 ```
 
 ## Entities
@@ -45,7 +46,7 @@ One row per **Google account** (global). Holds OAuth identity and tokens so we o
 
 ### Household
 
-The top-level container. One household = one "home" with a shared view of all members' calendars.
+The top-level container. One household = one "home" with a shared view of all members' calendars and a shared to-do list.
 
 | Field     | Type     | Description |
 |-----------|----------|-------------|
@@ -117,6 +118,28 @@ Tracks an invite (by email) to join a household. When the invite is accepted, a 
 
 ---
 
+### TodoItem
+
+A shared to-do list item for a **Household**. All members of the household see the same list. Items can be regular tasks (with check-off) or **section headers** (bold, styled) to organize the list. Items that have been checked off for 7 days are automatically removed when the list is loaded.
+
+| Field              | Type       | Description |
+|--------------------|------------|-------------|
+| id                 | PK         | Internal ID |
+| household_id       | FK Household | |
+| content            | string     | Display text (or section title) |
+| is_section_header  | boolean    | If true, rendered as a section header (bold, fancy background) |
+| is_checked         | boolean    | For regular items: whether checked off |
+| checked_at         | datetime?  | When the item was checked; used to auto-remove after 7 days |
+| position           | int        | Display order (lower first) |
+| created_at         | datetime   | |
+| updated_at         | datetime   | |
+
+**Constraints:** None beyond `household_id` FK.
+
+**Cleanup:** When listing todos, the API deletes any items where `is_checked = true` and `checked_at < now - 7 days`, then returns the remaining items ordered by `position`, then `id`.
+
+---
+
 ## Sharing semantics
 
 - **"When a calendar is added, it is shared with every other member"** is implemented by **visibility by household**, not by a separate share table:
@@ -146,6 +169,9 @@ Optional future: use the Google Calendar API to **share the calendar** with othe
 5. **Resolve current user from session**  
    Session stores `user_id` (or equivalent); load `User` and then `Member`(s) for that user.
 
+6. **To-do list for a household**  
+   `TodoItem` where `household_id = X`, ordered by `position`, `id`. Only members of that household may list/add/update/delete.
+
 ---
 
 ## Indexes (recommended)
@@ -155,5 +181,6 @@ Optional future: use the Google Calendar API to **share the calendar** with othe
 - `Member(household_id)` (for "all members" and "all calendars for household").
 - `Calendar(member_id)` (for "member's calendars").
 - `Calendar(member_id, google_calendar_id)` (unique).
+- `TodoItem(household_id)` (for listing a household's to-do items).
 
 These align with the query patterns above; exact index definitions can be added in migrations (e.g. Alembic) when you introduce them.

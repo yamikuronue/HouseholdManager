@@ -1,0 +1,194 @@
+.todo-list {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  min-height: 200px;
+}
+
+.todo-list-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.todo-list-title {
+  font-size: 1.1rem;
+  margin: 0 0 0.75rem 0;
+  color: #333;
+}
+
+.todo-list-error {
+  font-size: 0.9rem;
+  color: #c00;
+  margin-bottom: 0.5rem;
+}
+
+.todo-list-muted {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.todo-list-items {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.5rem 0;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+
+.todo-item:hover {
+  background: #f5f5f5;
+}
+
+.todo-item-section {
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  padding: 0.5rem 0.6rem;
+  background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+  border-radius: 6px;
+  font-weight: 700;
+  color: #283593;
+}
+
+.todo-item-section:hover {
+  background: linear-gradient(135deg, #d1d5e8 0%, #b0b8e0 100%);
+}
+
+.todo-item-section:first-child {
+  margin-top: 0;
+}
+
+.todo-item-section-text {
+  flex: 1;
+}
+
+.todo-item-checked .todo-item-label {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.todo-item-check {
+  flex-shrink: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 2px solid #888;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: #1a1a2e;
+}
+
+.todo-item-check:hover {
+  border-color: #1a1a2e;
+}
+
+.todo-item-checked .todo-item-check {
+  background: #1a1a2e;
+  border-color: #1a1a2e;
+  color: #fff;
+}
+
+.todo-item-label {
+  flex: 1;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.todo-item-delete {
+  flex-shrink: 0;
+  padding: 0.2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5;
+  font-size: 1rem;
+}
+
+.todo-item-delete:hover {
+  opacity: 1;
+}
+
+.todo-add-placeholder {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  background: #fafafa;
+  color: #888;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.todo-add-placeholder:hover {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.todo-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.todo-add-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.todo-add-section {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #555;
+  cursor: pointer;
+}
+
+.todo-add-btn {
+  padding: 0.35rem 0.75rem;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.todo-add-btn:hover {
+  background: #16213e;
+}
+
+.todo-add-cancel {
+  padding: 0.35rem 0.75rem;
+  background: transparent;
+  color: #666;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.todo-add-cancel:hover {
+  background: #f0f0f0;
+}

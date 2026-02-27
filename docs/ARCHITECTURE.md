@@ -42,6 +42,10 @@ HouseholdManager is a web application that aggregates multiple Google Calendars 
 - `POST /api/calendars` - Add a new Google Calendar
 - `DELETE /api/calendars/{id}` - Remove a calendar
 - `GET /api/events` - Get aggregated events from all calendars
+- `GET /api/todos?household_id=` - List household to-do items (removes items checked 7+ days ago)
+- `POST /api/todos` - Add a to-do item or section header
+- `PATCH /api/todos/{id}` - Update item (content, checked state, section header)
+- `DELETE /api/todos/{id}` - Remove a to-do item
 - `GET /api/auth/google` - Initiate Google OAuth flow
 - `GET /api/auth/callback` - Handle OAuth callback
 
@@ -73,6 +77,7 @@ HouseholdManager is a web application that aggregates multiple Google Calendars 
 **Key Components:**
 - CalendarWidget: Main calendar display
 - CalendarList: Manage connected calendars
+- TodoList: Household to-do list (inline add, check off, delete; section headers)
 - EventCard: Display individual events
 - AuthButton: Google authentication
 
@@ -125,6 +130,7 @@ The data layout is documented in [DATA_MODEL.md](DATA_MODEL.md). Summary:
 - **User** – One per Google account; holds OAuth identity and tokens.
 - **Member** – Links a User to a Household; a user can be in multiple households.
 - **Calendar** – A Google calendar added by a Member; visible to all members of that household.
+- **TodoItem** – Shared to-do list item for a Household; section headers and regular items; checked-off items auto-removed after 7 days.
 
 When a member adds a calendar, it is shown to every other member in the same household (no separate sharing table).
 
@@ -145,6 +151,7 @@ HouseholdManager/
 │   │   ├── routes/
 │   │   │   ├── calendars.py
 │   │   │   ├── events.py
+│   │   │   ├── todos.py
 │   │   │   └── auth.py
 │   │   └── main.py       # FastAPI app
 │   ├── services/         # Business logic
@@ -166,6 +173,7 @@ HouseholdManager/
 │   │   ├── components/
 │   │   │   ├── CalendarWidget.jsx
 │   │   │   ├── CalendarList.jsx
+│   │   │   ├── TodoList.jsx
 │   │   │   └── EventCard.jsx
 │   │   ├── services/
 │   │   │   └── api.js

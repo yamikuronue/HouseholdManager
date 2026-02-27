@@ -51,6 +51,13 @@ export const getInvitationByToken = (token) => api.get(`/api/invitations/by-toke
 export const resendInvitation = (id) => api.post(`/api/invitations/resend/${id}`).then((r) => r.data)
 export const acceptInvitation = (body) => api.post('/api/invitations/accept', body).then((r) => r.data)
 
+// Todos (household to-do list)
+export const listTodos = (householdId) =>
+  api.get('/api/todos', { params: { household_id: householdId } }).then((r) => r.data)
+export const createTodo = (body) => api.post('/api/todos', body).then((r) => r.data)
+export const updateTodo = (id, data) => api.patch(`/api/todos/${id}`, data).then((r) => r.data)
+export const deleteTodo = (id) => api.delete(`/api/todos/${id}`)
+
 // Events (aggregated)
 export const getEvents = (startDate, endDate) => {
   const params = {}

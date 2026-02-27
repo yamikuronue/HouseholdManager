@@ -54,6 +54,9 @@ class Household(Base):
     invitations = relationship(
         "Invitation", back_populates="household", cascade="all, delete-orphan"
     )
+    todo_items = relationship(
+        "TodoItem", back_populates="household", cascade="all, delete-orphan"
+    )
 
 
 class Member(Base):
@@ -131,3 +134,23 @@ class Invitation(Base):
 
     household = relationship("Household", back_populates="invitations")
     invited_by = relationship("Member", back_populates="invitations_sent")
+
+
+class TodoItem(Base):
+    """One item on a household's shared to-do list. Can be a regular item or a section header."""
+
+    __tablename__ = "todo_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    household_id = Column(
+        Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False
+    )
+    content = Column(String(500), nullable=False)
+    is_section_header = Column(Boolean, default=False)
+    is_checked = Column(Boolean, default=False)
+    checked_at = Column(DateTime, nullable=True)  # when checked; items checked 7+ days ago are auto-removed
+    position = Column(Integer, default=0)  # display order
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    household = relationship("Household", back_populates="todo_items")

@@ -144,6 +144,35 @@ class InvitationAccept(BaseModel):
     user_id: int
 
 
+# ----- TodoItem -----
+
+
+class TodoItemCreate(BaseModel):
+    household_id: int
+    content: str
+    is_section_header: bool = False
+    position: Optional[int] = None
+
+
+class TodoItemUpdate(BaseModel):
+    content: Optional[str] = None
+    is_section_header: Optional[bool] = None
+    is_checked: Optional[bool] = None
+    position: Optional[int] = None
+
+
+class TodoItemResponse(BaseModel):
+    id: int
+    household_id: int
+    content: str
+    is_section_header: bool
+    is_checked: bool
+    checked_at: Optional[datetime] = None
+    position: int
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
 # ----- Event (API/aggregation only, not stored) -----
 
 

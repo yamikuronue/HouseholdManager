@@ -104,8 +104,45 @@
   font-size: 0.95rem;
 }
 
+.dashboard-main {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .dashboard-main {
+    grid-template-columns: 1fr;
+  }
+}
+
 .dashboard-calendar {
-  margin-top: 1.5rem;
+  margin-top: 0;
+}
+
+.dashboard-todo {
+  position: sticky;
+  top: 1rem;
+}
+
+.dashboard-todo-household {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-todo-household label {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.dashboard-todo-household select {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
 }
 
 /* Settings: event color per household */
