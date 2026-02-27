@@ -42,9 +42,10 @@ def upgrade() -> None:
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id"),
+        if_not_exists=True,
     )
-    op.create_index(op.f("ix_invitations_id"), "invitations", ["id"], unique=False)
-    op.create_index(op.f("ix_invitations_token"), "invitations", ["token"], unique=True)
+    op.create_index(op.f("ix_invitations_id"), "invitations", ["id"], unique=False, if_not_exists=True)
+    op.create_index(op.f("ix_invitations_token"), "invitations", ["token"], unique=True, if_not_exists=True)
 
 
 def downgrade() -> None:

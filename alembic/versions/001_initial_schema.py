@@ -18,6 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Use if_not_exists so this can run on DBs that already have tables (e.g. from create_all).
     op.create_table(
         "users",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -31,9 +32,10 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(), nullable=True),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
+        if_not_exists=True,
     )
-    op.create_index(op.f("ix_users_google_sub"), "users", ["google_sub"], unique=True)
-    op.create_index(op.f("ix_users_id"), "users", ["id"], unique=False)
+    op.create_index(op.f("ix_users_google_sub"), "users", ["google_sub"], unique=True, if_not_exists=True)
+    op.create_index(op.f("ix_users_id"), "users", ["id"], unique=False, if_not_exists=True)
 
     op.create_table(
         "households",
@@ -42,8 +44,9 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(), nullable=True),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
+        if_not_exists=True,
     )
-    op.create_index(op.f("ix_households_id"), "households", ["id"], unique=False)
+    op.create_index(op.f("ix_households_id"), "households", ["id"], unique=False, if_not_exists=True)
 
     op.create_table(
         "members",
@@ -66,8 +69,9 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("user_id", "household_id", name="uq_member_user_household"),
+        if_not_exists=True,
     )
-    op.create_index(op.f("ix_members_id"), "members", ["id"], unique=False)
+    op.create_index(op.f("ix_members_id"), "members", ["id"], unique=False, if_not_exists=True)
 
     op.create_table(
         "calendars",
@@ -90,8 +94,9 @@ def upgrade() -> None:
             "google_calendar_id",
             name="uq_calendar_member_google",
         ),
+        if_not_exists=True,
     )
-    op.create_index(op.f("ix_calendars_id"), "calendars", ["id"], unique=False)
+    op.create_index(op.f("ix_calendars_id"), "calendars", ["id"], unique=False, if_not_exists=True)
 
 
 def downgrade() -> None:
