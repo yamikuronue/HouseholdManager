@@ -3,3 +3,4 @@
 - this app is deployed on digital ocean
 - where possible keep the architecture simple
 - app views should be compatible with mobile phones
+- please ensure the app is secure, reliable, and scalable
