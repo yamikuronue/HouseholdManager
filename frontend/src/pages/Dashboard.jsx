@@ -11,17 +11,18 @@ export default function Dashboard() {
   const { user } = useAuth()
   const [households, setHouseholds] = useState([])
   const [myMembers, setMyMembers] = useState([])
+  const [householdMembers, setHouseholdMembers] = useState([])
   const [dashboardHouseholdId, setDashboardHouseholdId] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
     if (!user) return
     try {
-      const [h, allMembers] = await Promise.all([
+      const [h, members] = await Promise.all([
         listHouseholds(),
         listMembers(),
       ])
-      const mine = allMembers.filter((m) => m.user_id === user.id)
+      const mine = members.filter((m) => m.user_id === user.id)
       const myHouseholdIds = new Set(mine.map((m) => m.household_id))
       setHouseholds(h.filter((hh) => myHouseholdIds.has(hh.id)))
       setMyMembers(mine)
@@ -37,6 +38,17 @@ export default function Dashboard() {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    const hid = dashboardHouseholdId ?? households[0]?.id
+    if (!hid) {
+      setHouseholdMembers([])
+      return
+    }
+    listMembers(hid)
+      .then(setHouseholdMembers)
+      .catch(() => setHouseholdMembers([]))
+  }, [dashboardHouseholdId, households])
 
   const selectedHousehold = households.find((h) => h.id === dashboardHouseholdId)
   const myMemberForHousehold = myMembers.find((m) => m.household_id === dashboardHouseholdId)
@@ -70,10 +82,28 @@ export default function Dashboard() {
           {loading ? (
             <p className="dashboard-muted">Loading…</p>
           ) : (
-            <TodoList
-              householdId={dashboardHouseholdId ?? (households[0]?.id ?? null)}
-              households={households}
-            />
+            <>
+              <TodoList
+                householdId={dashboardHouseholdId ?? (households[0]?.id ?? null)}
+                households={households}
+              />
+              {householdMembers.length > 0 && (
+                <div className="dashboard-color-key" aria-label="Who has each color">
+                  <span className="dashboard-color-key-label">Colors:</span>
+                  {householdMembers.map((m) => (
+                    <span key={m.id} className="dashboard-color-key-item">
+                      <span
+                        className="dashboard-color-key-dot"
+                        style={{ backgroundColor: m.event_color || '#888' }}
+                      />
+                      <span className="dashboard-color-key-name">
+                        {m.user?.display_name || m.user?.email || 'Member'}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>

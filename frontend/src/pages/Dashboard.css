@@ -126,6 +126,39 @@
   top: 1rem;
 }
 
+.dashboard-color-key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eee;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.dashboard-color-key-label {
+  margin-right: 0.25rem;
+}
+
+.dashboard-color-key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dashboard-color-key-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dashboard-color-key-name {
+  white-space: nowrap;
+}
+
 .dashboard-todo-household {
   margin-bottom: 0.5rem;
   display: flex;

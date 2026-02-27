@@ -184,11 +184,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
                   {dates.map((dateStr) => {
                     const meal = getMealFor(dateStr, slot.id)
                     const editing = isEditing(dateStr, slot.id)
-                    const label = meal
-                      ? meal.description
-                        ? `${meal.description} [${meal.member_display_name}]`
-                        : meal.member_display_name
-                      : null
+                    const label = meal ? (meal.description || '—') : null
                     return (
                       <td
                         key={`${dateStr}-${slot.id}`}
@@ -211,7 +207,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
                           <span
                             className="meal-planner-entry"
                             style={{ borderLeftColor: meal.member_color || '#888' }}
-                            title={meal.member_display_name}
+                            title={meal.member_display_name ? `${label} (${meal.member_display_name})` : label}
                           >
                             {label}
                           </span>

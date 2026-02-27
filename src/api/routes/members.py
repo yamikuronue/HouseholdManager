@@ -1,7 +1,7 @@
 """Member CRUD routes."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from src.db.session import get_db
 from src.models.database import Member
@@ -15,8 +15,8 @@ def list_members(
     household_id: int | None = Query(None, description="Filter by household"),
     db: Session = Depends(get_db),
 ):
-    """List members, optionally filtered by household_id."""
-    q = db.query(Member)
+    """List members, optionally filtered by household_id. Includes user for display name."""
+    q = db.query(Member).options(joinedload(Member.user))
     if household_id is not None:
         q = q.filter(Member.household_id == household_id)
     return q.all()
