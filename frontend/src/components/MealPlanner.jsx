@@ -31,9 +31,12 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
     setLoading(true)
     setError('')
     try {
+      const start = new Date(startDate)
+      const end = new Date(start)
+      end.setDate(end.getDate() + numDays - 1)
       const [slotList, mealList] = await Promise.all([
         listMealSlots(householdId),
-        listPlannedMeals(householdId, ISO_DATE(startDate), ISO_DATE(endDate)),
+        listPlannedMeals(householdId, ISO_DATE(start), ISO_DATE(end)),
       ])
       setSlots(slotList)
       setMeals(mealList)
@@ -42,7 +45,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
     } finally {
       setLoading(false)
     }
-  }, [householdId, startDate, endDate, numDays])
+  }, [householdId, startDate, numDays])
 
   useEffect(() => {
     load()
