@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import RedirectResponse
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -129,7 +129,7 @@ async def oauth_callback(code: str, db: Session = Depends(get_db)):
 
 @router.get("/me")
 def get_current_user_info(
-    authorization: str | None = None,
+    authorization: str | None = Header(None),
     db: Session = Depends(get_db),
 ):
     """
