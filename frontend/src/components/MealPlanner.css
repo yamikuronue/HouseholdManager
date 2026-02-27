@@ -119,3 +119,19 @@
   color: #bbb;
   font-size: 1.1rem;
 }
+
+.meal-planner-input {
+  width: 100%;
+  min-width: 4rem;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85rem;
+  border: 1px solid #1a1a2e;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.meal-planner-input:focus {
+  outline: none;
+  border-color: #1a1a2e;
+  box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.2);
+}

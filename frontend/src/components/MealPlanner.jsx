@@ -62,24 +62,54 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
   const getMealFor = (dateStr, slotId) =>
     meals.find((m) => m.meal_date === dateStr && m.meal_slot_id === slotId)
 
-  const handleCellClick = async (dateStr, slotId) => {
+  const [editingCell, setEditingCell] = useState(null)
+  const editingInputRef = useRef(null)
+
+  const isEditing = (dateStr, slotId) =>
+    editingCell && editingCell.dateStr === dateStr && editingCell.slotId === slotId
+
+  const startEditing = (dateStr, slotId) => {
     if (!myMemberId) return
+    const meal = getMealFor(dateStr, slotId)
+    if (meal && meal.member_id !== myMemberId) return
+    setEditingCell({ dateStr, slotId, value: meal?.description ?? '' })
+    setTimeout(() => editingInputRef.current?.focus(), 0)
+  }
+
+  const setEditingValue = (value) => {
+    setEditingCell((prev) => (prev ? { ...prev, value } : null))
+  }
+
+  const saveEdit = async (dateStr, slotId, value) => {
+    const trimmed = (value || '').trim()
     const existing = getMealFor(dateStr, slotId)
+    setEditingCell(null)
     setError('')
     try {
-      if (existing) {
-        if (existing.member_id === myMemberId) await deletePlannedMeal(existing.id)
+      if (trimmed === '') {
+        if (existing?.member_id === myMemberId) await deletePlannedMeal(existing.id)
       } else {
         await createOrUpdatePlannedMeal({
           household_id: householdId,
           meal_date: dateStr,
           meal_slot_id: slotId,
           member_id: myMemberId,
+          description: trimmed,
         })
       }
       if (loadRef.current) await loadRef.current()
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
+    }
+  }
+
+  const handleEditKeyDown = (e, dateStr, slotId) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      saveEdit(dateStr, slotId, editingCell?.value ?? '')
+    }
+    if (e.key === 'Escape') {
+      setEditingCell(null)
     }
   }
 
@@ -153,19 +183,37 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
                   <td className="meal-planner-cell meal-planner-cell-label">{slot.name}</td>
                   {dates.map((dateStr) => {
                     const meal = getMealFor(dateStr, slot.id)
+                    const editing = isEditing(dateStr, slot.id)
+                    const label = meal
+                      ? meal.description
+                        ? `${meal.description} [${meal.member_display_name}]`
+                        : meal.member_display_name
+                      : null
                     return (
                       <td
                         key={`${dateStr}-${slot.id}`}
                         className="meal-planner-cell meal-planner-cell-meal"
-                        onClick={() => handleCellClick(dateStr, slot.id)}
+                        onClick={() => !editing && startEditing(dateStr, slot.id)}
                       >
-                        {meal ? (
+                        {editing ? (
+                          <input
+                            ref={editingInputRef}
+                            type="text"
+                            className="meal-planner-input"
+                            placeholder="e.g. Cereal"
+                            value={editingCell?.value ?? ''}
+                            onChange={(e) => setEditingValue(e.target.value)}
+                            onKeyDown={(e) => handleEditKeyDown(e, dateStr, slot.id)}
+                            onBlur={() => saveEdit(dateStr, slot.id, editingCell?.value ?? '')}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : meal ? (
                           <span
                             className="meal-planner-entry"
                             style={{ borderLeftColor: meal.member_color || '#888' }}
                             title={meal.member_display_name}
                           >
-                            {meal.member_display_name}
+                            {label}
                           </span>
                         ) : (
                           <span className="meal-planner-empty-cell">+</span>
