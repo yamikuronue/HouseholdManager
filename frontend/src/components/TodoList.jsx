@@ -88,6 +88,54 @@ export default function TodoList({ householdId, households = [] }) {
     }
   }
 
+  const [draggedIndex, setDraggedIndex] = useState(null)
+  const [dropTargetIndex, setDropTargetIndex] = useState(null)
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+    e.dataTransfer.setData('application/json', JSON.stringify({ index }))
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
+    setDropTargetIndex(null)
+  }
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (draggedIndex === null || draggedIndex === index) return
+    setDropTargetIndex(index)
+  }
+
+  const handleDragLeave = () => {
+    setDropTargetIndex(null)
+  }
+
+  const handleDrop = async (e, dropIndex) => {
+    e.preventDefault()
+    setDropTargetIndex(null)
+    const dragIndex = draggedIndex
+    setDraggedIndex(null)
+    if (dragIndex == null || dragIndex === dropIndex) return
+    const reordered = [...items]
+    const [removed] = reordered.splice(dragIndex, 1)
+    reordered.splice(dropIndex, 0, removed)
+    setItems(reordered)
+    setError('')
+    const toUpdate = reordered
+      .map((item, idx) => (item.position !== idx ? { item, newPosition: idx } : null))
+      .filter(Boolean)
+    try {
+      await Promise.all(toUpdate.map(({ item, newPosition }) => updateTodo(item.id, { position: newPosition })))
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message)
+      load()
+    }
+  }
+
   if (!householdId) {
     return (
       <div className="todo-list todo-list-empty">
@@ -105,11 +153,24 @@ export default function TodoList({ householdId, households = [] }) {
       ) : (
         <>
           <ul className="todo-list-items">
-            {items.map((item) => (
+            {items.map((item, index) => (
               <li
                 key={item.id}
-                className={`todo-item ${item.is_section_header ? 'todo-item-section' : ''} ${item.is_checked ? 'todo-item-checked' : ''}`}
+                className={`todo-item ${item.is_section_header ? 'todo-item-section' : ''} ${item.is_checked ? 'todo-item-checked' : ''} ${draggedIndex === index ? 'todo-item-dragging' : ''} ${dropTargetIndex === index ? 'todo-item-drop-target' : ''}`}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, index)}
               >
+                <span
+                  className="todo-item-drag-handle"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragEnd={handleDragEnd}
+                  aria-label="Drag to reorder"
+                  title="Drag to reorder"
+                >
+                  ⋮⋮
+                </span>
                 {item.is_section_header ? (
                   <>
                     <span className="todo-item-section-text">{item.content || 'Section'}</span>

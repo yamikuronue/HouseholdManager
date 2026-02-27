@@ -45,6 +45,33 @@
   margin-bottom: 2px;
 }
 
+.todo-item-drag-handle {
+  flex-shrink: 0;
+  cursor: grab;
+  color: #999;
+  font-size: 0.9rem;
+  padding: 0.2rem;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.todo-item-drag-handle:active {
+  cursor: grabbing;
+}
+
+.todo-item-drag-handle:hover {
+  color: #666;
+}
+
+.todo-item-dragging {
+  opacity: 0.5;
+}
+
+.todo-item-drop-target {
+  outline: 2px dashed #1a1a2e;
+  outline-offset: 2px;
+}
+
 .todo-item:hover {
   background: #f5f5f5;
 }
