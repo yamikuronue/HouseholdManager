@@ -99,6 +99,48 @@
   border-bottom: 1px solid #eee;
 }
 
+.dashboard-list-item-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-btn-secondary {
+  padding: 0.35rem 0.75rem;
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.dashboard-btn-secondary:hover {
+  background: #e5e5e5;
+}
+
+.dashboard-list-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dashboard-btn-danger {
+  padding: 0.35rem 0.75rem;
+  background: #fff;
+  color: #c00;
+  border: 1px solid #c00;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.dashboard-btn-danger:hover {
+  background: #fee;
+}
+
 .dashboard-muted {
   color: #666;
   font-size: 0.95rem;

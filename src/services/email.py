@@ -23,14 +23,14 @@ def send_invitation_email(
     household_name: str,
     inviter_name: Optional[str],
     accept_url: str,
-) -> bool:
+) -> Optional[bool]:
     """
     Send an invitation email to join a household via Mailjet API.
-    Returns True if sent (or skipped because Mailjet not configured), False on error.
+    Returns True if sent, False on error, None if Mailjet is not configured (no attempt).
     """
     if not _mailjet_configured():
         logger.info("Mailjet not configured; skipping invitation email to %s", to_email)
-        return True
+        return None
 
     subject = f"You're invited to join {household_name} on Lionfish"
     inviter_line = f"{inviter_name} invited you" if inviter_name else "A household member invited you"

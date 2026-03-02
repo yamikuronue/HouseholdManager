@@ -1,14 +1,24 @@
 """Invitation routes: send, list, resend, accept."""
 
+import logging
 import secrets
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from src.config import settings
 from src.db.session import get_db
 from src.models.database import Household, Invitation, Member
-from src.models.schemas import InvitationAccept, InvitationCreate, InvitationResponse
+from src.models.schemas import (
+    InvitationAccept,
+    InvitationCreate,
+    InvitationResponse,
+    InvitationSendResponse,
+)
+from src.services.email import send_invitation_email
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/invitations", tags=["invitations"])
 
@@ -32,9 +42,28 @@ def list_invitations(
     return q.all()
 
 
-@router.post("", response_model=InvitationResponse, status_code=201)
+def _send_invite_email_for(inv: Invitation) -> bool | None:
+    """Send invitation email if Mailjet is configured. Returns True if sent, False on error, None if not configured."""
+    base = settings.frontend_base_url.rstrip("/")
+    accept_url = f"{base}/invite/accept?token={inv.token}"
+    household_name = inv.household.name if inv.household else "a household"
+    inviter_name = None
+    if inv.invited_by and inv.invited_by.user:
+        inviter_name = inv.invited_by.user.display_name or inv.invited_by.user.email
+    ok = send_invitation_email(
+        to_email=inv.email,
+        household_name=household_name,
+        inviter_name=inviter_name,
+        accept_url=accept_url,
+    )
+    if ok is False:
+        logger.warning("Invitation email could not be sent to %s (invite link still created)", inv.email)
+    return ok  # True, False, or None
+
+
+@router.post("", response_model=InvitationSendResponse, status_code=201)
 def create_invitation(body: InvitationCreate, db: Session = Depends(get_db)):
-    """Send an invitation to join a household (by email). Records sent_at and last_sent_at."""
+    """Send an invitation to join a household (by email). Records sent_at and last_sent_at; sends email if Mailjet configured."""
     household = db.get(Household, body.household_id)
     if not household:
         raise HTTPException(status_code=404, detail="Household not found")
@@ -58,7 +87,8 @@ def create_invitation(body: InvitationCreate, db: Session = Depends(get_db)):
         existing.last_sent_at = now
         db.commit()
         db.refresh(existing)
-        return existing
+        email_sent = _send_invite_email_for(existing)
+        return InvitationSendResponse(invitation=InvitationResponse.model_validate(existing), email_sent=email_sent)
     token = _generate_token()
     while db.query(Invitation).filter(Invitation.token == token).first():
         token = _generate_token()
@@ -74,12 +104,13 @@ def create_invitation(body: InvitationCreate, db: Session = Depends(get_db)):
     db.add(inv)
     db.commit()
     db.refresh(inv)
-    return inv
+    email_sent = _send_invite_email_for(inv)
+    return InvitationSendResponse(invitation=InvitationResponse.model_validate(inv), email_sent=email_sent)
 
 
-@router.post("/resend/{invitation_id}", response_model=InvitationResponse)
+@router.post("/resend/{invitation_id}", response_model=InvitationSendResponse)
 def resend_invitation(invitation_id: int, db: Session = Depends(get_db)):
-    """Resend an invitation: update last_sent_at."""
+    """Resend an invitation: update last_sent_at and send email again if Mailjet configured."""
     inv = db.get(Invitation, invitation_id)
     if not inv:
         raise HTTPException(status_code=404, detail="Invitation not found")
@@ -90,7 +121,19 @@ def resend_invitation(invitation_id: int, db: Session = Depends(get_db)):
     inv.last_sent_at = datetime.utcnow()
     db.commit()
     db.refresh(inv)
-    return inv
+    email_sent = _send_invite_email_for(inv)
+    return InvitationSendResponse(invitation=InvitationResponse.model_validate(inv), email_sent=email_sent)
+
+
+@router.delete("/{invitation_id}", status_code=204)
+def delete_invitation(invitation_id: int, db: Session = Depends(get_db)):
+    """Delete an invitation (e.g. to cancel a pending invite)."""
+    inv = db.get(Invitation, invitation_id)
+    if not inv:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+    db.delete(inv)
+    db.commit()
+    return None
 
 
 @router.get("/by-token/{token}", response_model=InvitationResponse)

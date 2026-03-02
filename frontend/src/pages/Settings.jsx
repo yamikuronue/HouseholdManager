@@ -6,6 +6,8 @@ import {
   listMembers,
   listInvitations,
   createInvitation,
+  resendInvitation,
+  deleteInvitation,
   createCalendar,
   listCalendars,
   deleteCalendar,
@@ -130,13 +132,53 @@ export default function Settings() {
       return
     }
     try {
-      await createInvitation({
+      const res = await createInvitation({
         household_id: hid,
         email: inviteEmail.trim().toLowerCase(),
         invited_by_member_id: me.id,
       })
+      const inv = res.invitation ?? res
+      const emailSent = res.email_sent
       setInviteEmail('')
-      setSuccess('Invitation sent.')
+      if (emailSent === true) {
+        setSuccess(`Invitation sent. Email delivered to ${inv.email}.`)
+      } else if (emailSent === false) {
+        setSuccess('Invitation created, but email could not be sent. Share the invite link from the list below.')
+      } else {
+        setSuccess('Invitation created. (Email is not configured.)')
+      }
+      load()
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
+  const handleResendInvite = async (invitationId, email) => {
+    setError('')
+    setSuccess('')
+    try {
+      const res = await resendInvitation(invitationId)
+      const emailSent = res.email_sent
+      if (emailSent === true) {
+        setSuccess(`Email resent to ${email}.`)
+      } else if (emailSent === false) {
+        setSuccess('Invitation updated, but email could not be sent. Share the invite link from below.')
+      } else {
+        setSuccess('Invitation updated. (Email is not configured.)')
+      }
+      load()
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
+  const handleDeleteInvite = async (invitationId, email) => {
+    if (!window.confirm(`Remove the invitation for ${email}? They will no longer be able to use the invite link.`)) return
+    setError('')
+    setSuccess('')
+    try {
+      await deleteInvitation(invitationId)
+      setSuccess('Invitation removed.')
       load()
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
@@ -364,8 +406,24 @@ export default function Settings() {
             {invitations
               .filter((i) => i.status === 'pending')
               .map((i) => (
-                <li key={i.id}>
-                  {i.email} – last sent {new Date(i.last_sent_at).toLocaleDateString()}
+                <li key={i.id} className="dashboard-list-item-with-action">
+                  <span>{i.email} – last sent {new Date(i.last_sent_at).toLocaleDateString()}</span>
+                  <span className="dashboard-list-actions">
+                    <button
+                      type="button"
+                      className="dashboard-btn-secondary"
+                      onClick={() => handleResendInvite(i.id, i.email)}
+                    >
+                      Resend
+                    </button>
+                    <button
+                      type="button"
+                      className="dashboard-btn-danger"
+                      onClick={() => handleDeleteInvite(i.id, i.email)}
+                    >
+                      Delete
+                    </button>
+                  </span>
                 </li>
               ))}
           </ul>

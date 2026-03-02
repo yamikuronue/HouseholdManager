@@ -49,6 +49,7 @@ export const listInvitations = (opts = {}) =>
 export const createInvitation = (body) => api.post('/api/invitations', body).then((r) => r.data)
 export const getInvitationByToken = (token) => api.get(`/api/invitations/by-token/${token}`).then((r) => r.data)
 export const resendInvitation = (id) => api.post(`/api/invitations/resend/${id}`).then((r) => r.data)
+export const deleteInvitation = (id) => api.delete(`/api/invitations/${id}`)
 export const acceptInvitation = (body) => api.post('/api/invitations/accept', body).then((r) => r.data)
 
 // Meal planner

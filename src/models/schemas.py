@@ -140,6 +140,12 @@ class InvitationResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class InvitationSendResponse(BaseModel):
+    """Response for create and resend invitation; includes whether the email was sent."""
+    invitation: InvitationResponse
+    email_sent: Optional[bool] = None  # True=sent, False=failed, None=Mailjet not configured
+
+
 class InvitationAccept(BaseModel):
     """Body when accepting an invite: token + user_id (the user joining)."""
     token: str
