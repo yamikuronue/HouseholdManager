@@ -8,6 +8,7 @@ import {
   createInvitation,
   resendInvitation,
   deleteInvitation,
+  deleteMember,
   createCalendar,
   listCalendars,
   deleteCalendar,
@@ -37,6 +38,7 @@ export default function Settings() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [myMembers, setMyMembers] = useState([])
+  const [membersByHousehold, setMembersByHousehold] = useState({}) // householdId -> list of members (with user)
   const [myCalendars, setMyCalendars] = useState([])
   const [mealSlotsByHousehold, setMealSlotsByHousehold] = useState({})
   const [newMealSlotName, setNewMealSlotName] = useState('')
@@ -61,6 +63,14 @@ export default function Settings() {
       setHouseholds(mineHouseholds)
       setMyMembers(mine)
       setInvitations(inv)
+      const membersPerH = {}
+      await Promise.all(
+        mineHouseholds.map(async (hh) => {
+          const list = await listMembers(hh.id)
+          membersPerH[hh.id] = list
+        })
+      )
+      setMembersByHousehold(membersPerH)
       const calendarLists = await Promise.all(
         mine.map((m) => listCalendars({ member_id: m.id }))
       )
@@ -179,6 +189,23 @@ export default function Settings() {
     try {
       await deleteInvitation(invitationId)
       setSuccess('Invitation removed.')
+      load()
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
+  const handleRemoveMember = async (householdId, memberId, displayName) => {
+    if (!window.confirm(`Remove ${displayName} from this household? They will lose access to the household.`)) return
+    setError('')
+    setSuccess('')
+    try {
+      await deleteMember(memberId)
+      setMembersByHousehold((prev) => ({
+        ...prev,
+        [householdId]: (prev[householdId] || []).filter((m) => m.id !== memberId),
+      }))
+      setSuccess('Member removed from household.')
       load()
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
@@ -324,12 +351,55 @@ export default function Settings() {
         {households.length === 0 ? (
           <p className="dashboard-muted">No households yet. Create one above, or accept an invite.</p>
         ) : (
-          <ul className="dashboard-list">
-            {households.map((h) => (
-              <li key={h.id}>
-                <strong>{h.name}</strong> (id: {h.id})
-              </li>
-            ))}
+          <ul className="dashboard-list settings-households-list">
+            {households.map((h) => {
+              const myMember = myMembers.find((m) => m.household_id === h.id)
+              const isOwner = myMember?.role === 'owner'
+              const members = membersByHousehold[h.id] || []
+              return (
+                <li key={h.id} className="settings-household-item">
+                  <div className="settings-household-header">
+                    <strong>{h.name}</strong>
+                  </div>
+                  <ul className="dashboard-list settings-members-sublist">
+                    {members.map((m) => {
+                      const displayName = m.user?.display_name || m.user?.email || 'Unknown'
+                      const isMe = m.user_id === user?.id
+                      const canRemove = isOwner && !isMe && m.role !== 'owner'
+                      const memberColor = m.event_color || DEFAULT_PASTEL_COLORS[0]
+                      return (
+                        <li key={m.id} className="dashboard-list-item-with-action">
+                          <span className="settings-member-row">
+                            <span
+                              className="settings-member-color-swatch"
+                              style={{ backgroundColor: memberColor }}
+                              title={`${displayName}'s color`}
+                              aria-hidden
+                            />
+                            <span>
+                              {displayName}
+                              {m.role === 'owner' && (
+                                <span className="settings-role-badge settings-role-owner">Owner</span>
+                              )}
+                              {isMe && <span className="settings-role-badge settings-role-me">You</span>}
+                            </span>
+                          </span>
+                          {canRemove && (
+                            <button
+                              type="button"
+                              className="dashboard-btn-danger"
+                              onClick={() => handleRemoveMember(h.id, m.id, displayName)}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>

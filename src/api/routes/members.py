@@ -1,10 +1,12 @@
 """Member CRUD routes."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
+from src.api.routes.auth import get_current_user
 from src.db.session import get_db
-from src.models.database import Member
+from src.models.database import Member, User
 from src.models.schemas import MemberCreate, MemberResponse, MemberUpdate
 
 router = APIRouter(prefix="/api/members", tags=["members"])
@@ -24,7 +26,7 @@ def list_members(
 
 @router.post("", response_model=MemberResponse, status_code=201)
 def create_member(body: MemberCreate, db: Session = Depends(get_db)):
-    """Add a member (user) to a household."""
+    """Add a member (user) to a household. First member becomes owner."""
     existing = (
         db.query(Member)
         .filter(
@@ -37,10 +39,14 @@ def create_member(body: MemberCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=400, detail="User is already a member of this household"
         )
+    count = db.query(func.count(Member.id)).filter(Member.household_id == body.household_id).scalar()
+    role = body.role
+    if count == 0:
+        role = "owner"  # First member (household creator) is owner/manager
     member = Member(
         user_id=body.user_id,
         household_id=body.household_id,
-        role=body.role,
+        role=role,
     )
     db.add(member)
     db.commit()
@@ -75,11 +81,35 @@ def update_member(
 
 
 @router.delete("/{member_id}", status_code=204)
-def delete_member(member_id: int, db: Session = Depends(get_db)):
-    """Remove a member from the household."""
+def delete_member(
+    member_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Remove a member from the household. Only an owner/manager of that household can remove members."""
     member = db.get(Member, member_id)
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
+    my_membership = (
+        db.query(Member)
+        .filter(
+            Member.household_id == member.household_id,
+            Member.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not my_membership:
+        raise HTTPException(status_code=403, detail="You are not in this household")
+    if my_membership.role != "owner":
+        raise HTTPException(
+            status_code=403,
+            detail="Only the household owner can remove members",
+        )
+    if member.role == "owner":
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot remove an owner. They must leave or be demoted first.",
+        )
     db.delete(member)
     db.commit()
     return None
