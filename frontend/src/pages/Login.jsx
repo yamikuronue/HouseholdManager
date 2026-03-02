@@ -14,7 +14,19 @@ export default function Login() {
       <div className="login-card">
         <img src="/logo.jpg" alt="Lionfish" className="login-logo" />
         <h1>Lionfish</h1>
-        <p>Sign in with your Google account to manage households and calendars.</p>
+        <p className="login-tagline">
+          A private control center for your household schedules, meals, and tasks.
+        </p>
+        <ul className="login-feature-list">
+          <li>Connect multiple Google Calendars into one shared view</li>
+          <li>See everyone’s events color‑coded on a single dashboard</li>
+          <li>Plan meals and grocery lists per household</li>
+          <li>Share access with family members via invite links</li>
+        </ul>
+        <p className="login-cta-help">
+          Sign in with Google to create or join a household. You can revoke access at any time in
+          your Google account settings.
+        </p>
         <button type="button" className="login-google-btn" onClick={login}>
           Login with Google
         </button>
