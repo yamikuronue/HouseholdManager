@@ -15,6 +15,13 @@
   max-width: 380px;
 }
 
+.login-logo {
+  display: block;
+  height: 80px;
+  width: auto;
+  margin: 0 auto 1rem;
+}
+
 .login-card h1 {
   margin-bottom: 0.5rem;
   font-size: 1.75rem;

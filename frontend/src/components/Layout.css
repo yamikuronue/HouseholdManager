@@ -16,14 +16,15 @@
 }
 
 .layout-logo {
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: #eee;
+  display: flex;
+  align-items: center;
   text-decoration: none;
 }
 
-.layout-logo:hover {
-  color: #fff;
+.layout-logo-img {
+  height: 40px;
+  width: auto;
+  display: block;
 }
 
 .layout-nav {
