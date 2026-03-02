@@ -333,28 +333,24 @@ export default function Settings() {
 
   if (loading) return <div className="dashboard-loading">Loading…</div>
 
+  const selectedHid = selectedHouseholdId ? parseInt(selectedHouseholdId, 10) : null
+  const selectedHousehold = households.find((h) => h.id === selectedHid)
+  const selectedMembers = selectedHid ? (membersByHousehold[selectedHid] || []) : []
+  const myMemberInSelected = myMembers.find((m) => m.household_id === selectedHid)
+  const calendarsForSelected = selectedHid && myMemberInSelected
+    ? myCalendars.filter((c) => c.member_id === myMemberInSelected.id)
+    : []
+  const mealSlotsForSelected = selectedHid ? (mealSlotsByHousehold[selectedHid] || []) : []
+
   return (
     <div className="dashboard settings-page">
       <h1>Settings</h1>
       {error && <div className="dashboard-message dashboard-error">{error}</div>}
       {success && <div className="dashboard-message dashboard-success">{success}</div>}
 
-      <section className="dashboard-section">
-        <h2>Create household</h2>
-        <form onSubmit={handleCreateHousehold} className="dashboard-form">
-          <input
-            type="text"
-            placeholder="Household name"
-            value={newHouseholdName}
-            onChange={(e) => setNewHouseholdName(e.target.value)}
-          />
-          <button type="submit">Create</button>
-        </form>
-      </section>
-
       {households.length > 0 && (
-        <section className="dashboard-section settings-household-context">
-          <label htmlFor="settings-household">Household for forms below:</label>
+        <section className="dashboard-section settings-household-context settings-household-context-top">
+          <label htmlFor="settings-household">Household to manage:</label>
           <select
             id="settings-household"
             value={selectedHouseholdId}
@@ -371,99 +367,101 @@ export default function Settings() {
       )}
 
       <section className="dashboard-section">
-        <h2>My households</h2>
+        <h2>Create household</h2>
+        <form onSubmit={handleCreateHousehold} className="dashboard-form">
+          <input
+            type="text"
+            placeholder="Household name"
+            value={newHouseholdName}
+            onChange={(e) => setNewHouseholdName(e.target.value)}
+          />
+          <button type="submit">Create</button>
+        </form>
+      </section>
+
+      <section className="dashboard-section">
+        <h2>Members</h2>
         {households.length === 0 ? (
           <p className="dashboard-muted">No households yet. Create one above, or accept an invite.</p>
+        ) : !selectedHousehold ? (
+          <p className="dashboard-muted">Select a household above to manage members.</p>
         ) : (
           <ul className="dashboard-list settings-households-list">
-            {households.map((h) => {
-              const myMember = myMembers.find((m) => m.household_id === h.id)
-              const isOwner = myMember?.role === 'owner'
-              const members = membersByHousehold[h.id] || []
-              return (
-                <li key={h.id} className="settings-household-item">
-                  <div className="settings-household-header">
-                    <strong>{h.name}</strong>
-                  </div>
-                  <ul className="dashboard-list settings-members-sublist">
-                    {members.map((m) => {
-                      const displayName = m.user?.display_name || m.user?.email || 'Unknown'
-                      const isMe = m.user_id === user?.id
-                      const canRemove = isOwner && !isMe && m.role !== 'owner'
-                      const memberColor = m.event_color || DEFAULT_PASTEL_COLORS[0]
-                      return (
-                        <li key={m.id} className="dashboard-list-item-with-action">
-                          <span className="settings-member-row">
-                            <span
-                              className="settings-member-color-swatch"
-                              style={{ backgroundColor: memberColor }}
-                              title={`${displayName}'s color`}
-                              aria-hidden
-                            />
-                            <span>
-                              {displayName}
-                              {m.role === 'owner' && (
-                                <span className="settings-role-badge settings-role-owner">Owner</span>
-                              )}
-                              {isMe && <span className="settings-role-badge settings-role-me">You</span>}
-                            </span>
-                          </span>
-                          {canRemove && (
-                            <button
-                              type="button"
-                              className="dashboard-btn-danger"
-                              onClick={() => handleRemoveMember(h.id, m.id, displayName)}
-                            >
-                              Remove
-                            </button>
+            <li className="settings-household-item">
+              <div className="settings-household-header">
+                <strong>{selectedHousehold.name}</strong>
+              </div>
+              <ul className="dashboard-list settings-members-sublist">
+                {selectedMembers.map((m) => {
+                  const displayName = m.user?.display_name || m.user?.email || 'Unknown'
+                  const isMe = m.user_id === user?.id
+                  const isOwner = myMemberInSelected?.role === 'owner'
+                  const canRemove = isOwner && !isMe && m.role !== 'owner'
+                  const memberColor = m.event_color || DEFAULT_PASTEL_COLORS[0]
+                  return (
+                    <li key={m.id} className="dashboard-list-item-with-action">
+                      <span className="settings-member-row">
+                        <span
+                          className="settings-member-color-swatch"
+                          style={{ backgroundColor: memberColor }}
+                          title={`${displayName}'s color`}
+                          aria-hidden
+                        />
+                        <span>
+                          {displayName}
+                          {m.role === 'owner' && (
+                            <span className="settings-role-badge settings-role-owner">Owner</span>
                           )}
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </li>
-              )
-            })}
+                          {isMe && <span className="settings-role-badge settings-role-me">You</span>}
+                        </span>
+                      </span>
+                      {canRemove && (
+                        <button
+                          type="button"
+                          className="dashboard-btn-danger"
+                          onClick={() => handleRemoveMember(selectedHid, m.id, displayName)}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            </li>
           </ul>
         )}
       </section>
 
-      {households.length > 0 && (
+      {selectedHousehold && myMemberInSelected && (
         <section className="dashboard-section">
           <h2>Your color</h2>
-          <p className="dashboard-muted">Your calendar events and meal planner entries use this color. Choose per household.</p>
-          {households.map((h) => {
-            const myMember = myMembers.find((m) => m.household_id === h.id)
-            if (!myMember) return null
-            const currentColor = myMember.event_color || DEFAULT_PASTEL_COLORS[0]
-            return (
-              <div key={h.id} className="settings-event-color-row">
-                <span className="settings-event-color-label">{h.name}</span>
-                <div className="settings-event-color-options">
-                  {DEFAULT_PASTEL_COLORS.map((hex) => (
-                    <button
-                      key={hex}
-                      type="button"
-                      className="settings-color-swatch"
-                      style={{ backgroundColor: hex }}
-                      title={hex}
-                      aria-label={`Use ${hex}`}
-                      onClick={() => handleEventColorChange(myMember.id, hex)}
-                    />
-                  ))}
-                  <label className="settings-color-picker-label">
-                    <input
-                      type="color"
-                      value={currentColor}
-                      onChange={(e) => handleEventColorChange(myMember.id, e.target.value)}
-                      className="settings-color-picker"
-                    />
-                    <span className="settings-color-picker-text">Custom</span>
-                  </label>
-                </div>
-              </div>
-            )
-          })}
+          <p className="dashboard-muted">Your calendar events and meal planner entries use this color for this household.</p>
+          <div className="settings-event-color-row">
+            <span className="settings-event-color-label">{selectedHousehold.name}</span>
+            <div className="settings-event-color-options">
+              {DEFAULT_PASTEL_COLORS.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  className="settings-color-swatch"
+                  style={{ backgroundColor: hex }}
+                  title={hex}
+                  aria-label={`Use ${hex}`}
+                  onClick={() => handleEventColorChange(myMemberInSelected.id, hex)}
+                />
+              ))}
+              <label className="settings-color-picker-label">
+                <input
+                  type="color"
+                  value={myMemberInSelected.event_color || DEFAULT_PASTEL_COLORS[0]}
+                  onChange={(e) => handleEventColorChange(myMemberInSelected.id, e.target.value)}
+                  className="settings-color-picker"
+                />
+                <span className="settings-color-picker-text">Custom</span>
+              </label>
+            </div>
+          </div>
         </section>
       )}
 
@@ -522,35 +520,25 @@ export default function Settings() {
       <section className="dashboard-section">
         <h2>Your calendars</h2>
         <p className="dashboard-muted">Calendars linked to this household. Removing one only unlinks it here; it stays in your Google account.</p>
-        {myCalendars.length === 0 ? (
-          <p className="dashboard-muted">No calendars added yet. Add one below.</p>
+        {!selectedHousehold ? (
+          <p className="dashboard-muted">Select a household above to see linked calendars.</p>
+        ) : calendarsForSelected.length === 0 ? (
+          <p className="dashboard-muted">No calendars added yet for this household. Add one below.</p>
         ) : (
-          <ul className="dashboard-list">
-            {households.map((h) => {
-              const myMember = myMembers.find((m) => m.household_id === h.id)
-              const cals = myCalendars.filter((c) => c.member_id === myMember?.id)
-              if (cals.length === 0) return null
-              return (
-                <li key={h.id} className="settings-calendar-household">
-                  <strong>{h.name}</strong>
-                  <ul className="dashboard-list settings-calendar-sublist">
-                    {cals.map((cal) => (
-                      <li key={cal.id} className="settings-calendar-item">
-                        <span>{cal.name}</span>
-                        <button
-                          type="button"
-                          className="settings-remove-calendar-btn"
-                          onClick={() => handleRemoveCalendar(cal)}
-                          title="Remove from household (stays in Google)"
-                        >
-                          Remove from household
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              )
-            })}
+          <ul className="dashboard-list settings-calendar-sublist">
+            {calendarsForSelected.map((cal) => (
+              <li key={cal.id} className="settings-calendar-item">
+                <span>{cal.name}</span>
+                <button
+                  type="button"
+                  className="settings-remove-calendar-btn"
+                  onClick={() => handleRemoveCalendar(cal)}
+                  title="Remove from household (stays in Google)"
+                >
+                  Remove from household
+                </button>
+              </li>
+            ))}
           </ul>
         )}
       </section>
@@ -579,51 +567,55 @@ export default function Settings() {
       {households.length > 0 && (
         <section className="dashboard-section">
           <h2>Meal planner</h2>
-          <p className="dashboard-muted">Configure which meals appear and how many weeks to show on the dashboard.</p>
-          {households.map((h) => (
-            <div key={h.id} className="settings-meal-planner-household">
-              <strong>{h.name}</strong>
-              <div className="settings-meal-planner-weeks">
-                <span>Weeks to show:</span>
-                {[1, 2, 3, 4].map((w) => (
-                  <button
-                    key={w}
-                    type="button"
-                    className={h.meal_planner_weeks === w ? 'settings-weeks-btn settings-weeks-btn-active' : 'settings-weeks-btn'}
-                    onClick={() => handleMealPlannerWeeksChange(h.id, w)}
-                  >
-                    {w}
-                  </button>
-                ))}
-              </div>
-              <div className="settings-meal-slots">
-                <span>Meal types (order):</span>
-                <ul className="dashboard-list settings-meal-slots-list">
-                  {(mealSlotsByHousehold[h.id] || []).map((slot) => (
-                    <li key={slot.id} className="settings-meal-slot-item">
-                      {slot.name}
-                      <button
-                        type="button"
-                        className="settings-remove-calendar-btn"
-                        onClick={() => handleDeleteMealSlot(slot)}
-                      >
-                        Remove
-                      </button>
-                    </li>
+          <p className="dashboard-muted">Configure which meals appear and how many weeks to show on the dashboard for the selected household.</p>
+          {!selectedHousehold ? (
+            <p className="dashboard-muted">Select a household above to configure meal planner.</p>
+          ) : (
+            <>
+              <div className="settings-meal-planner-household">
+                <strong>{selectedHousehold.name}</strong>
+                <div className="settings-meal-planner-weeks">
+                  <span>Weeks to show:</span>
+                  {[1, 2, 3, 4].map((w) => (
+                    <button
+                      key={w}
+                      type="button"
+                      className={selectedHousehold.meal_planner_weeks === w ? 'settings-weeks-btn settings-weeks-btn-active' : 'settings-weeks-btn'}
+                      onClick={() => handleMealPlannerWeeksChange(selectedHousehold.id, w)}
+                    >
+                      {w}
+                    </button>
                   ))}
-                </ul>
+                </div>
+                <div className="settings-meal-slots">
+                  <span>Meal types (order):</span>
+                  <ul className="dashboard-list settings-meal-slots-list">
+                    {mealSlotsForSelected.map((slot) => (
+                      <li key={slot.id} className="settings-meal-slot-item">
+                        {slot.name}
+                        <button
+                          type="button"
+                          className="settings-remove-calendar-btn"
+                          onClick={() => handleDeleteMealSlot(slot)}
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </div>
-          ))}
-          <form onSubmit={handleAddMealSlot} className="dashboard-form dashboard-form-inline">
-            <input
-              type="text"
-              placeholder="Meal type (e.g. Snack)"
-              value={newMealSlotName}
-              onChange={(e) => setNewMealSlotName(e.target.value)}
-            />
-            <button type="submit">Add meal type</button>
-          </form>
+              <form onSubmit={handleAddMealSlot} className="dashboard-form dashboard-form-inline">
+                <input
+                  type="text"
+                  placeholder="Meal type (e.g. Snack)"
+                  value={newMealSlotName}
+                  onChange={(e) => setNewMealSlotName(e.target.value)}
+                />
+                <button type="submit">Add meal type</button>
+              </form>
+            </>
+          )}
         </section>
       )}
     </div>
