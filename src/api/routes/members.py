@@ -19,20 +19,27 @@ def _user_household_ids(db: Session, user_id: int) -> list[int]:
 
 @router.get("", response_model=list[MemberResponse])
 def list_members(
-    household_id: int | None = Query(None, description="Filter by household"),
+    household_id: int | None = Query(None, description="Filter by household; omit to list members of all your households"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List members of households the current user is in. Requires household_id; returns only that household's members if user is a member."""
-    if household_id is None:
-        raise HTTPException(status_code=400, detail="household_id is required")
+    """List members of households the current user is in. If household_id is omitted, returns members of all households the user belongs to."""
     hid_list = _user_household_ids(db, current_user.id)
-    if household_id not in hid_list:
-        raise HTTPException(status_code=403, detail="You are not a member of this household")
+    if household_id is not None:
+        if household_id not in hid_list:
+            raise HTTPException(status_code=403, detail="You are not a member of this household")
+        return (
+            db.query(Member)
+            .options(joinedload(Member.user))
+            .filter(Member.household_id == household_id)
+            .all()
+        )
+    if not hid_list:
+        return []
     return (
         db.query(Member)
         .options(joinedload(Member.user))
-        .filter(Member.household_id == household_id)
+        .filter(Member.household_id.in_(hid_list))
         .all()
     )
 
