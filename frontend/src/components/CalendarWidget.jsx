@@ -99,6 +99,22 @@ function CalendarWidget({ householdId = null }) {
     if (start && end) loadEvents(start, end)
   }, [householdId])
 
+  const getFocusables = useCallback((container) => {
+    if (!container) return []
+    const sel = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    return [...container.querySelectorAll(sel)].filter(
+      (el) => el instanceof HTMLElement && !el.hasAttribute('disabled') && el.offsetParent !== null
+    )
+  }, [])
+
+  const closeAddModal = useCallback(() => {
+    setAddModalOpen(false)
+    setAddError('')
+    setAddSubmitting(false)
+  }, [])
+
+  const closeEventPopover = useCallback(() => setEventPopoverEvent(null), [])
+
   // Focus trap and Escape for Add Event modal
   useEffect(() => {
     if (!addModalOpen || !addModalRef.current) return
@@ -157,14 +173,6 @@ function CalendarWidget({ householdId = null }) {
     }
   }, [eventPopoverEvent, closeEventPopover, getFocusables])
 
-  const getFocusables = useCallback((container) => {
-    if (!container) return []
-    const sel = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    return [...container.querySelectorAll(sel)].filter(
-      (el) => el instanceof HTMLElement && !el.hasAttribute('disabled') && el.offsetParent !== null
-    )
-  }, [])
-
   const openAddModal = useCallback((startDate) => {
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     setAddError('')
@@ -197,12 +205,6 @@ function CalendarWidget({ householdId = null }) {
       .then(setWritableCalendars)
       .catch(() => setWritableCalendars([]))
   }, [householdId])
-
-  const closeAddModal = useCallback(() => {
-    setAddModalOpen(false)
-    setAddError('')
-    setAddSubmitting(false)
-  }, [])
 
   const handleCreateEvent = useCallback(
     async (e) => {
@@ -275,8 +277,6 @@ function CalendarWidget({ householdId = null }) {
       htmlLink,
     })
   }, [])
-
-  const closeEventPopover = useCallback(() => setEventPopoverEvent(null), [])
 
   return (
     <div className="calendar-widget">
