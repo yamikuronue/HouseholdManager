@@ -388,9 +388,6 @@ export default function Settings() {
         ) : (
           <ul className="dashboard-list settings-households-list">
             <li className="settings-household-item">
-              <div className="settings-household-header">
-                <strong>{selectedHousehold.name}</strong>
-              </div>
               <ul className="dashboard-list settings-members-sublist">
                 {selectedMembers.map((m) => {
                   const displayName = m.user?.display_name || m.user?.email || 'Unknown'
@@ -438,7 +435,6 @@ export default function Settings() {
           <h2>Your color</h2>
           <p className="dashboard-muted">Your calendar events and meal planner entries use this color for this household.</p>
           <div className="settings-event-color-row">
-            <span className="settings-event-color-label">{selectedHousehold.name}</span>
             <div className="settings-event-color-options">
               {DEFAULT_PASTEL_COLORS.map((hex) => (
                 <button
@@ -573,7 +569,6 @@ export default function Settings() {
           ) : (
             <>
               <div className="settings-meal-planner-household">
-                <strong>{selectedHousehold.name}</strong>
                 <div className="settings-meal-planner-weeks">
                   <span>Weeks to show:</span>
                   {[1, 2, 3, 4].map((w) => (
