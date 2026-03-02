@@ -1,8 +1,8 @@
-# HouseholdManager Architecture
+# Lionfish Architecture
 
 ## Overview
 
-HouseholdManager is a web application that aggregates multiple Google Calendars into a unified view. The application consists of a Python backend API and a frontend web interface.
+Lionfish is a web application that aggregates multiple Google Calendars into a unified view. The application consists of a Python backend API and a frontend web interface.
 
 ## System Architecture
 
@@ -169,7 +169,7 @@ When a member adds a calendar, it is shown to every other member in the same hou
 ## Project Structure
 
 ```
-HouseholdManager/
+Lionfish/
 ├── src/
 │   ├── api/              # FastAPI routes
 │   │   ├── __init__.py

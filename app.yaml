@@ -20,13 +20,13 @@ databases:
 ingress:
   rules:
     - component:
-        name: householdmanager
+        name: lionfish
       match:
         path:
           prefix: /
 
 services:
-  - name: householdmanager
+  - name: lionfish
     github:
       repo: yamikuronue/HouseholdManager
       branch: main

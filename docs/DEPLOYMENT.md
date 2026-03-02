@@ -27,7 +27,7 @@ If you're using **DigitalOcean App Platform**, this is the easiest and most secu
 2. **Via App Spec (YAML):**
    Create an `app.yaml` file:
    ```yaml
-   name: household-manager
+   name: lionfish
    services:
    - name: backend
      github:
@@ -71,7 +71,7 @@ For storing credential files or larger secrets:
 
 1. **Create a Space:**
    ```bash
-   doctl spaces create household-manager-secrets --region nyc3
+   doctl spaces create lionfish-secrets --region nyc3
    ```
 
 2. **Upload encrypted credentials:**
@@ -80,7 +80,7 @@ For storing credential files or larger secrets:
    gpg --symmetric --cipher-algo AES256 .env
    
    # Upload to Spaces
-   doctl spaces object put household-manager-secrets .env.gpg
+   doctl spaces object put lionfish-secrets .env.gpg
    ```
 
 3. **Download and decrypt at runtime:**
@@ -95,7 +95,7 @@ For database credentials:
 
 1. **Create a Managed PostgreSQL Database:**
    ```bash
-   doctl databases create household-manager-db \
+   doctl databases create lionfish-db \
      --engine pg \
      --region nyc3 \
      --size db-s-dev-database
@@ -103,7 +103,7 @@ For database credentials:
 
 2. **Get Connection String:**
    ```bash
-   doctl databases connection household-manager-db
+   doctl databases connection lionfish-db
    ```
 
 3. **Set as Environment Variable:**
@@ -138,7 +138,7 @@ Ensure your app reads from environment variables (already configured in `src/con
 Create `app.yaml` in your repository root:
 
 ```yaml
-name: household-manager
+name: lionfish
 region: nyc
 
 services:

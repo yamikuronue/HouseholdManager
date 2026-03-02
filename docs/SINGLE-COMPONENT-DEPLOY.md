@@ -24,7 +24,7 @@ The Dockerfile builds the frontend (with API on same origin), then runs the back
 In your `app.yaml` you can define a single service. The root `Dockerfile` is used by default (no `dockerfile_path` needed):
 
 ```yaml
-name: household-manager
+name: lionfish
 region: nyc
 
 services:

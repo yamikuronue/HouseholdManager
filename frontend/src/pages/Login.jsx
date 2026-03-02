@@ -12,7 +12,7 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>HouseholdManager</h1>
+        <h1>Lionfish</h1>
         <p>Sign in with your Google account to manage households and calendars.</p>
         <button type="button" className="login-google-btn" onClick={login}>
           Login with Google

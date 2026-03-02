@@ -16,7 +16,7 @@ export default function Layout() {
     <div className="layout">
       <header className="layout-header">
         <Link to="/dashboard" className="layout-logo">
-          HouseholdManager
+          Lionfish
         </Link>
         <nav className="layout-nav">
           {user && (

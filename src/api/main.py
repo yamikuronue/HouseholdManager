@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="HouseholdManager API",
+    title="Lionfish API",
     description="API for managing and aggregating Google Calendars",
     version="1.0.0",
     lifespan=lifespan,
@@ -118,7 +118,7 @@ async def serve_spa(full_path: str):
             return FileResponse(file_path)
         return FileResponse(STATIC_DIR / "index.html")
     if full_path in ("", "/") or full_path == ".":
-        return {"message": "HouseholdManager API"}
+        return {"message": "Lionfish API"}
     raise HTTPException(status_code=404, detail="Not Found")
 
 
@@ -126,4 +126,4 @@ if not _has_static:
     @app.get("/")
     async def root():
         """Root endpoint when frontend is not bundled."""
-        return {"message": "HouseholdManager API"}
+        return {"message": "Lionfish API"}

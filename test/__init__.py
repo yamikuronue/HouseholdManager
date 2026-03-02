@@ -1,1 +1,1 @@
-"""Test package for HouseholdManager."""
+"""Test package for Lionfish."""

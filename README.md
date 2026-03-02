@@ -1,4 +1,4 @@
-# HouseholdManager
+# Lionfish
 A household manager tool custom built for my household. Aggregates multiple Google Calendars into a unified view.
 
 ## Features
@@ -132,21 +132,21 @@ To start with a fresh database, remove the `data` folder and run `docker-compose
 
 **Backend:**
 ```bash
-docker build -t householdmanager-backend .
-docker run -p 8000:8000 --env-file .env householdmanager-backend
+docker build -t lionfish-backend .
+docker run -p 8000:8000 --env-file .env lionfish-backend
 ```
 
 **Frontend:**
 ```bash
 cd frontend
-docker build -t householdmanager-frontend .
-docker run -p 3000:3000 householdmanager-frontend
+docker build -t lionfish-frontend .
+docker run -p 3000:3000 lionfish-frontend
 ```
 
 ## Project Structure
 
 ```
-HouseholdManager/
+Lionfish/
 ├── src/
 │   ├── api/              # FastAPI routes and main app
 │   │   ├── routes/       # API endpoints (calendars, events, auth)

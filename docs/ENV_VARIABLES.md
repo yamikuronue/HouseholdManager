@@ -1,6 +1,6 @@
 # Environment Variables Reference
 
-Quick reference for all environment variables needed for HouseholdManager deployment.
+Quick reference for all environment variables needed for Lionfish deployment.
 
 ## Required Secrets (Set in DigitalOcean App Platform Console)
 

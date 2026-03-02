@@ -1,1 +1,1 @@
-"""HouseholdManager - A household manager tool."""
+"""Lionfish - A household manager tool."""

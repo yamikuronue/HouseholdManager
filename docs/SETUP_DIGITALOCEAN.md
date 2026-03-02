@@ -1,6 +1,6 @@
 # DigitalOcean App Platform Setup Guide
 
-Complete step-by-step guide for deploying HouseholdManager to DigitalOcean App Platform with Google Calendar API integration.
+Complete step-by-step guide for deploying Lionfish to DigitalOcean App Platform with Google Calendar API integration.
 
 ## Prerequisites
 
@@ -25,13 +25,13 @@ Complete step-by-step guide for deploying HouseholdManager to DigitalOcean App P
 2. Click **Create Credentials** > **OAuth client ID**
 3. If prompted, configure OAuth consent screen:
    - User Type: **External** (or Internal if using Google Workspace)
-   - App name: **HouseholdManager**
+   - App name: **Lionfish**
    - User support email: Your email
    - Developer contact: Your email
    - Click **Save and Continue** through scopes and test users
 4. Create OAuth Client ID:
    - Application type: **Web application**
-   - Name: **HouseholdManager Production**
+   - Name: **Lionfish Production**
    - Authorized redirect URIs:
      - `http://localhost:8000/api/auth/callback` (for local dev)
      - `https://your-backend.ondigitalocean.app/api/auth/callback` (update after deployment)
@@ -59,7 +59,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 1. Open `app.yaml` in your repository
 2. Update the following:
-   - Replace `your-username/HouseholdManager` with your actual GitHub username/repo (2 places)
+   - Replace `your-username/HouseholdManager` with your actual GitHub username/repo (e.g. your-username/Lionfish or your repo name) (2 places)
    - Choose your preferred region (default: `nyc`)
    - Optionally uncomment the database section if you want a managed PostgreSQL database
 
@@ -72,7 +72,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
    - Click **Create App**
    - Select **GitHub** as source
    - Authorize DigitalOcean to access your GitHub if needed
-   - Select your repository: `HouseholdManager`
+   - Select your repository (e.g. HouseholdManager or Lionfish, depending on your repo name)
    - Select branch: `main`
 
 2. **Configure App:**
@@ -145,8 +145,8 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 ### 5.1 Get Your App URLs
 
 After deployment, note your app URLs:
-- Backend: `https://household-manager-backend-xxxxx.ondigitalocean.app`
-- Frontend: `https://household-manager-frontend-xxxxx.ondigitalocean.app`
+- Backend: `https://lionfish-backend-xxxxx.ondigitalocean.app`
+- Frontend: `https://lionfish-frontend-xxxxx.ondigitalocean.app`
 
 ### 5.2 Update Google Cloud Console
 
@@ -187,7 +187,7 @@ After deployment, note your app URLs:
 
 3. **Test Frontend:**
    - Visit your frontend URL
-   - You should see the HouseholdManager interface
+   - You should see the Lionfish interface
 
 4. **Test Google Calendar Integration:**
    - Click "Add Google Calendar"

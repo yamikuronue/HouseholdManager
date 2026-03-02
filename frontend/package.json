@@ -1,7 +1,7 @@
 {
-  "name": "household-manager-frontend",
+  "name": "lionfish-frontend",
   "version": "1.0.0",
-  "description": "Frontend for HouseholdManager",
+  "description": "Frontend for Lionfish",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

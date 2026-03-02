@@ -1,1 +1,1 @@
-"""API package for HouseholdManager."""
+"""API package for Lionfish."""
