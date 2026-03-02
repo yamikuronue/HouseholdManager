@@ -9,6 +9,7 @@ import {
   resendInvitation,
   deleteInvitation,
   deleteMember,
+  deleteHousehold,
   createCalendar,
   listCalendars,
   deleteCalendar,
@@ -331,6 +332,28 @@ export default function Settings() {
     }
   }
 
+  const handleDeleteHousehold = async () => {
+    const hid = selectedHouseholdId ? parseInt(selectedHouseholdId, 10) : null
+    if (!hid || !selectedHousehold) return
+    const name = selectedHousehold.name
+    if (
+      !window.confirm(
+        `Permanently delete the household "${name}" and all its data (members, calendars, meals, todos, grocery lists)? This cannot be undone.`
+      )
+    )
+      return
+    setError('')
+    setSuccess('')
+    try {
+      await deleteHousehold(hid)
+      setSelectedHouseholdId(households.length > 1 ? String(households.find((h) => h.id !== hid)?.id ?? '') : '')
+      setSuccess('Household deleted.')
+      load()
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
   if (loading) return <div className="dashboard-loading">Loading…</div>
 
   const selectedHid = selectedHouseholdId ? parseInt(selectedHouseholdId, 10) : null
@@ -611,6 +634,19 @@ export default function Settings() {
               </form>
             </>
           )}
+        </section>
+      )}
+
+      {selectedHousehold && myMemberInSelected?.role === 'owner' && (
+        <section className="dashboard-section settings-delete-household">
+          <button
+            type="button"
+            className="settings-delete-household-btn"
+            onClick={handleDeleteHousehold}
+            aria-label="Delete household permanently"
+          >
+            Delete household -- WARNING: This cannot be undone!
+          </button>
         </section>
       )}
     </div>

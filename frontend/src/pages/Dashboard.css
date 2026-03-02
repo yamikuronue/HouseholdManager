@@ -470,3 +470,31 @@
   justify-content: space-between;
   gap: 0.5rem;
 }
+
+/* Delete household: bright white on red, bottom of settings */
+.settings-delete-household {
+  margin-top: 1.5rem;
+}
+
+.settings-delete-household-btn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #c00;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.settings-delete-household-btn:hover {
+  background: #a00;
+}
+
+.settings-delete-household-btn:focus {
+  outline: 2px solid #c00;
+  outline-offset: 2px;
+}

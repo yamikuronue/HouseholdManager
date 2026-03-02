@@ -3,8 +3,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from src.api.routes.auth import get_current_user
 from src.db.session import get_db
-from src.models.database import Household
+from src.models.database import Household, Member
+from src.models.database import User
 from src.models.schemas import HouseholdCreate, HouseholdResponse, HouseholdUpdate
 
 router = APIRouter(prefix="/api/households", tags=["households"])
@@ -53,11 +55,27 @@ def update_household(
 
 
 @router.delete("/{household_id}", status_code=204)
-def delete_household(household_id: int, db: Session = Depends(get_db)):
-    """Delete a household (cascades to members, calendars, invitations)."""
+def delete_household(
+    household_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a household and all related records. Only the household owner may delete."""
     household = db.get(Household, household_id)
     if not household:
         raise HTTPException(status_code=404, detail="Household not found")
+    member = (
+        db.query(Member)
+        .filter(
+            Member.household_id == household_id,
+            Member.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not member:
+        raise HTTPException(status_code=403, detail="You are not a member of this household")
+    if member.role != "owner":
+        raise HTTPException(status_code=403, detail="Only the household owner can delete the household")
     db.delete(household)
     db.commit()
     return None
