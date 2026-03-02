@@ -13,6 +13,7 @@
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  position: relative;
 }
 
 .layout-logo {
@@ -76,4 +77,91 @@
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* Hamburger: hidden on desktop */
+.layout-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: #eee;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.layout-hamburger:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.layout-hamburger-bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.layout-hamburger[aria-expanded="true"] .layout-hamburger-bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.layout-hamburger[aria-expanded="true"] .layout-hamburger-bar:nth-child(2) {
+  opacity: 0;
+}
+.layout-hamburger[aria-expanded="true"] .layout-hamburger-bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Mobile: show hamburger, collapse nav into dropdown */
+@media (max-width: 768px) {
+  .layout-hamburger {
+    display: flex;
+  }
+
+  .layout-nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: #1a1a2e;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.2s ease-out;
+    padding: 0 1rem;
+  }
+
+  .layout-nav.layout-nav-open {
+    max-height: 280px;
+    padding: 0.5rem 1rem 1rem;
+  }
+
+  .layout-nav a,
+  .layout-nav .layout-user,
+  .layout-nav .layout-logout {
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .layout-nav .layout-logout {
+    border: none;
+    text-align: left;
+    margin-top: 0.25rem;
+    border-radius: 4px;
+  }
+
+  .layout-nav .layout-user {
+    border-bottom: none;
+    font-size: 0.85rem;
+    color: #888;
+  }
 }
