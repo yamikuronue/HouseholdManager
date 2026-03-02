@@ -5,9 +5,180 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.calendar-widget-header {
+  margin-bottom: 12px;
+}
+
+.calendar-widget-add-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid #3788d8;
+  background: #3788d8;
+  color: white;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.calendar-widget-add-btn:hover {
+  background: #2a6bb5;
+  border-color: #2a6bb5;
+}
+
+/* Modal overlay */
+.calendar-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.calendar-modal {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 420px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.calendar-modal-title {
+  margin: 0 0 16px;
+  padding: 16px 16px 0;
+  font-size: 1.25rem;
+}
+
+.calendar-add-form {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.calendar-add-form label {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.calendar-add-form .required {
+  color: #c00;
+}
+
+.calendar-add-form input,
+.calendar-add-form select,
+.calendar-add-form textarea {
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.calendar-add-form textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.calendar-form-error {
+  color: #c00;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.calendar-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.calendar-modal-actions button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.calendar-modal-actions button[type="submit"] {
+  background: #3788d8;
+  border-color: #3788d8;
+  color: white;
+}
+
+.calendar-modal-actions button[type="submit"]:hover:not(:disabled) {
+  background: #2a6bb5;
+  border-color: #2a6bb5;
+}
+
+.calendar-advanced-btn {
+  color: #3788d8 !important;
+  background: transparent !important;
+  border-color: #3788d8 !important;
+}
+
+.calendar-advanced-btn:hover {
+  background: #e8f0fe !important;
+}
+
+/* Event popover (view / open in Google) */
+.calendar-event-popover .calendar-modal-title {
+  font-size: 1.1rem;
+}
+
+.calendar-event-meta,
+.calendar-event-description,
+.calendar-event-location {
+  margin: 0 0 8px;
+  padding: 0 16px;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.calendar-event-description {
+  white-space: pre-wrap;
+}
+
+.calendar-google-link {
+  display: inline-block;
+  margin: 8px 16px 16px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: #3788d8;
+  color: white;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.calendar-google-link:hover {
+  background: #2a6bb5;
+}
+
+.calendar-event-muted {
+  margin: 8px 16px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
 .loading {
   text-align: center;
   padding: 40px;
   font-size: 18px;
   color: #666;
+}
+
+@media (max-width: 480px) {
+  .calendar-modal {
+    max-width: 100%;
+  }
+  .calendar-modal-actions {
+    flex-direction: column;
+  }
+  .calendar-modal-actions button {
+    width: 100%;
+  }
 }

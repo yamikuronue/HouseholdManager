@@ -1,4 +1,4 @@
-"""Event retrieval routes: aggregate events from all visible Google calendars."""
+"""Event retrieval and creation routes: aggregate from Google calendars; create via Google API."""
 
 from datetime import datetime, timedelta, timezone
 
@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from src.db.session import get_db
 from src.models.database import Calendar, Member
+from src.models.schemas import EventCreate
 
 from src.api.routes.auth import get_current_user
 from src.models.database import User
@@ -101,6 +102,97 @@ async def get_events(
                     "location": item.get("location"),
                     "calendar_name": cal.name,
                     "color": (cal.member.event_color if cal.member else None) or cal.color,
+                    "html_link": item.get("htmlLink"),
                 })
 
     return {"events": all_events}
+
+
+@router.get("/writable-calendars")
+def get_writable_calendars(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List calendars the current user can add events to (calendars they own)."""
+    calendars = (
+        db.query(Calendar)
+        .join(Member, Calendar.member_id == Member.id)
+        .filter(Member.user_id == current_user.id)
+        .order_by(Calendar.name)
+        .all()
+    )
+    return [
+        {"id": cal.id, "name": cal.name}
+        for cal in calendars
+    ]
+
+
+@router.post("")
+async def create_event(
+    body: EventCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create an event on a Google calendar. Only the calendar owner (member's user) can create."""
+    cal = (
+        db.query(Calendar)
+        .options(joinedload(Calendar.member).joinedload(Member.user))
+        .filter(Calendar.id == body.calendar_id)
+        .first()
+    )
+    if not cal:
+        raise HTTPException(status_code=404, detail="Calendar not found")
+    if cal.member.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You can only add events to calendars you own. Select one of your calendars.",
+        )
+    user = cal.member.user
+    if not user or not user.access_token:
+        raise HTTPException(
+            status_code=400,
+            detail="No Google access token. Sign out and sign in again to grant calendar access.",
+        )
+
+    # Google Calendar API expects RFC3339 dateTime and optional timeZone
+    start_dt = body.start if body.start.tzinfo else body.start.replace(tzinfo=timezone.utc)
+    end_dt = body.end if body.end.tzinfo else body.end.replace(tzinfo=timezone.utc)
+    payload = {
+        "summary": body.title,
+        "description": body.description or "",
+        "location": body.location or "",
+        "start": {"dateTime": start_dt.isoformat().replace("+00:00", "Z"), "timeZone": "UTC"},
+        "end": {"dateTime": end_dt.isoformat().replace("+00:00", "Z"), "timeZone": "UTC"},
+    }
+
+    url = f"https://www.googleapis.com/calendar/v3/calendars/{cal.google_calendar_id}/events"
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            url,
+            headers={"Authorization": f"Bearer {user.access_token}"},
+            json=payload,
+        )
+    if resp.status_code == 401:
+        raise HTTPException(
+            status_code=401,
+            detail="Google token expired or invalid. Sign out and sign in again.",
+        )
+    if resp.status_code not in (200, 201):
+        raise HTTPException(
+            status_code=502,
+            detail=f"Google Calendar API error: {resp.status_code}",
+        )
+    data = resp.json()
+    start_str = data.get("start", {}).get("dateTime") or data.get("start", {}).get("date")
+    end_str = data.get("end", {}).get("dateTime") or data.get("end", {}).get("date") or start_str
+    return {
+        "id": f"{cal.id}-{data.get('id', '')}",
+        "title": data.get("summary") or body.title,
+        "start": start_str,
+        "end": end_str,
+        "description": data.get("description"),
+        "location": data.get("location"),
+        "calendar_name": cal.name,
+        "color": (cal.member.event_color if cal.member else None) or cal.color,
+        "html_link": data.get("htmlLink"),
+    }

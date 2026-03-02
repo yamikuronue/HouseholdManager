@@ -42,6 +42,8 @@ HouseholdManager is a web application that aggregates multiple Google Calendars 
 - `POST /api/calendars` - Add a new Google Calendar
 - `DELETE /api/calendars/{id}` - Remove a calendar
 - `GET /api/events` - Get aggregated events from all calendars
+- `GET /api/events/writable-calendars` - List calendars the current user can add events to
+- `POST /api/events` - Create an event on a Google calendar (body: calendar_id, title, start, end, description?, location?)
 - `GET /api/todos?household_id=` - List household to-do items (removes items checked 7+ days ago)
 - `POST /api/todos` - Add a to-do item or section header
 - `PATCH /api/todos/{id}` - Update item (content, checked state, section header)

@@ -281,6 +281,16 @@ class EventBase(BaseModel):
     location: Optional[str] = None
 
 
+class EventCreate(BaseModel):
+    """Payload for creating an event on a Google calendar via the API."""
+    calendar_id: int  # our internal Calendar id
+    title: str
+    start: datetime
+    end: datetime
+    description: Optional[str] = None
+    location: Optional[str] = None
+
+
 class EventResponse(EventBase):
     id: str
     calendar_id: str

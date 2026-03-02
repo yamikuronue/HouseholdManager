@@ -99,6 +99,10 @@ export const getEvents = (startDate, endDate) => {
   if (endDate) params.end_date = endDate?.toISOString?.()
   return api.get('/api/events', { params }).then((r) => r.data)
 }
+export const getWritableCalendars = () =>
+  api.get('/api/events/writable-calendars').then((r) => r.data)
+export const createEvent = (body) =>
+  api.post('/api/events', body).then((r) => r.data)
 
 // Legacy names for existing components
 export const getCalendars = () => listCalendars()

@@ -12,7 +12,7 @@ class AuthService:
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
-        self.scope = "https://www.googleapis.com/auth/calendar.readonly"
+        self.scope = "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events"
     
     def get_authorization_url(self) -> str:
         """Generate Google OAuth authorization URL."""
