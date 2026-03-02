@@ -65,11 +65,11 @@ services:
       # Add SECRET_KEY in the component's Environment Variables (dashboard) so it's not resolved from app-level
       - key: GOOGLE_REDIRECT_URI
         scope: RUN_TIME
-        value: https://lionfish-app-uhfes.ondigitalocean.app/api/auth/callback
+        value: https://lionfish.cloud/api/auth/callback
 
       - key: FRONTEND_URL
         scope: RUN_TIME
-        value: https://lionfish-app-uhfes.ondigitalocean.app
+        value: https://lionfish.cloud
 
       - key: ENVIRONMENT
         scope: RUN_TIME
