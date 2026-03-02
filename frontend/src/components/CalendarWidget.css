@@ -5,6 +5,15 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Constrain calendar height so week/day views don't stretch the page */
+.calendar-widget .fc {
+  max-height: 420px;
+}
+
+.calendar-widget .fc .fc-view-harness {
+  min-height: 0;
+}
+
 .calendar-widget-warning {
   margin-bottom: 12px;
   padding: 10px 14px;
@@ -239,14 +248,91 @@
   color: #666;
 }
 
+/* Mobile-friendly calendar and modal */
+@media (max-width: 768px) {
+  .calendar-widget {
+    padding: 12px;
+  }
+
+  .calendar-widget .fc {
+    height: 320px !important;
+    max-height: 50vh;
+  }
+
+  .calendar-widget-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .calendar-widget-search-wrap {
+    min-width: 0;
+  }
+
+  .calendar-widget-search {
+    max-width: none;
+  }
+
+  .calendar-widget-add-btn {
+    min-height: 44px;
+    flex-shrink: 0;
+  }
+
+  /* FullCalendar toolbar: stack or shrink on small screens */
+  .calendar-widget .fc .fc-toolbar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .calendar-widget .fc .fc-toolbar-chunk {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .calendar-widget .fc .fc-toolbar-title {
+    font-size: 1.1rem;
+    order: -1;
+    width: 100%;
+    text-align: center;
+  }
+
+  .calendar-widget .fc .fc-button {
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+
+  .calendar-widget .fc .fc-scrollgrid {
+    font-size: 0.85rem;
+  }
+}
+
 @media (max-width: 480px) {
+  .calendar-modal-overlay {
+    padding: 8px;
+    align-items: flex-end;
+  }
+
   .calendar-modal {
     max-width: 100%;
+    max-height: 92vh;
+    border-radius: 12px 12px 0 0;
   }
+
   .calendar-modal-actions {
     flex-direction: column;
   }
+
   .calendar-modal-actions button {
     width: 100%;
+    min-height: 44px;
+  }
+
+  .calendar-add-form input,
+  .calendar-add-form select,
+  .calendar-add-form textarea {
+    min-height: 44px;
+    font-size: 16px; /* avoids zoom on focus in iOS */
   }
 }

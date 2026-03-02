@@ -268,7 +268,10 @@ function CalendarWidget({ householdId = null }) {
           right: 'dayGridMonth,timeGridWeek,timeGridDay',
         }}
         events={events}
-        height="auto"
+        height={420}
+        slotMinTime="06:00:00"
+        slotMaxTime="22:00:00"
+        slotDuration="00:30:00"
         datesSet={(info) => loadEvents(info.start, info.end)}
         dateClick={(info) => openAddModal(info.date)}
         eventClick={handleEventClick}
