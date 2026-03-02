@@ -44,6 +44,42 @@ def decode_token(token: str) -> dict | None:
         return None
 
 
+def refresh_google_token_if_needed(user: User, db: Session) -> bool:
+    """
+    Refresh the user's Google access token if missing or expired (using refresh_token).
+    Updates user.access_token and user.token_expiry in DB on success.
+    Returns True if we have a valid token to use, False otherwise.
+    """
+    if not user or not user.refresh_token:
+        return False
+    # Consider token valid if it exists and expires more than 5 minutes from now
+    now = datetime.utcnow()
+    if user.access_token and user.token_expiry and (user.token_expiry - now).total_seconds() > 300:
+        return True
+
+    with httpx.Client() as client:
+        resp = client.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "refresh_token": user.refresh_token,
+                "grant_type": "refresh_token",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+    if resp.status_code != 200:
+        return False
+    data = resp.json()
+    user.access_token = data.get("access_token")
+    if user.access_token:
+        user.token_expiry = now + timedelta(seconds=data.get("expires_in", 3600))
+        db.commit()
+        db.refresh(user)
+        return True
+    return False
+
+
 def get_current_user(
     authorization: str | None = Header(None),
     db: Session = Depends(get_db),

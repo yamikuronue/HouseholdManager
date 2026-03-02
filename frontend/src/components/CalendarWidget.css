@@ -5,6 +5,20 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.calendar-widget-warning {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #fff8e6;
+  border: 1px solid #e6c200;
+  border-radius: 6px;
+  color: #5c4a00;
+  font-size: 0.95rem;
+}
+
+.calendar-widget-warning strong {
+  color: #3d3300;
+}
+
 .calendar-widget-header {
   margin-bottom: 12px;
   display: flex;

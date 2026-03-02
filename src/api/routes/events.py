@@ -10,7 +10,7 @@ from src.db.session import get_db
 from src.models.database import Calendar, Member
 from src.models.schemas import EventCreate
 
-from src.api.routes.auth import get_current_user
+from src.api.routes.auth import get_current_user, refresh_google_token_if_needed
 from src.models.database import User
 
 router = APIRouter(prefix="/api/events", tags=["events"])
@@ -64,13 +64,26 @@ async def get_events(
     )
 
     all_events = []
+    skipped_calendars = []  # { "calendar_name", "owner" } when we can't load a calendar
     time_min = start_date.isoformat().replace("+00:00", "Z")
     time_max = end_date.isoformat().replace("+00:00", "Z")
+
+    # Refresh expired/missing Google tokens for calendar owners so we can fetch all households' events
+    for cal in calendars:
+        if cal.member and cal.member.user:
+            refresh_google_token_if_needed(cal.member.user, db)
+
+    def _owner_label(cal) -> str:
+        if cal.member and cal.member.user:
+            u = cal.member.user
+            return u.display_name or u.email or "Unknown"
+        return "Unknown"
 
     async with httpx.AsyncClient() as client:
         for cal in calendars:
             user = cal.member.user
             if not user or not user.access_token:
+                skipped_calendars.append({"calendar_name": cal.name, "owner": _owner_label(cal)})
                 continue
             url = (
                 f"https://www.googleapis.com/calendar/v3/calendars/{cal.google_calendar_id}/events"
@@ -89,6 +102,7 @@ async def get_events(
                 params=params,
             )
             if resp.status_code != 200:
+                skipped_calendars.append({"calendar_name": cal.name, "owner": _owner_label(cal)})
                 continue
             data = resp.json()
             for item in data.get("items") or []:
@@ -108,7 +122,7 @@ async def get_events(
                     "html_link": item.get("htmlLink"),
                 })
 
-    return {"events": all_events}
+    return {"events": all_events, "skipped_calendars": skipped_calendars}
 
 
 @router.get("/writable-calendars")

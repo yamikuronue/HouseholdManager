@@ -35,6 +35,7 @@ function CalendarWidget() {
   const calendarRef = useRef(null)
   const currentRangeRef = useRef({ start: null, end: null })
   const [searchQuery, setSearchQuery] = useState('')
+  const [skippedCalendars, setSkippedCalendars] = useState([])
 
   const loadEvents = useCallback((start, end) => {
     if (start) currentRangeRef.current = { start, end }
@@ -55,8 +56,12 @@ function CalendarWidget() {
           },
         }))
         setEvents(calendarEvents)
+        setSkippedCalendars(data?.skipped_calendars ?? [])
       })
-      .catch((err) => console.error('Error loading events:', err))
+      .catch((err) => {
+        console.error('Error loading events:', err)
+        setSkippedCalendars([])
+      })
   }, [searchQuery])
 
   const refreshEvents = useCallback(() => {
@@ -196,6 +201,13 @@ function CalendarWidget() {
 
   return (
     <div className="calendar-widget">
+      {skippedCalendars.length > 0 && (
+        <div className="calendar-widget-warning" role="alert">
+          <strong>Some calendars could not be loaded:</strong>{' '}
+          {skippedCalendars.map((s) => `${s.calendar_name} (${s.owner})`).join(', ')}.
+          Ask these members to sign in again to refresh their calendar access.
+        </div>
+      )}
       <div className="calendar-widget-header">
         <div className="calendar-widget-search-wrap">
           <label htmlFor="calendar-search" className="calendar-search-label">
