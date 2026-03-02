@@ -273,9 +273,9 @@
 
 .dashboard-color-key {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
   margin-top: 0.75rem;
   padding-top: 0.75rem;
   border-top: 1px solid #eee;
@@ -284,7 +284,7 @@
 }
 
 .dashboard-color-key-label {
-  margin-right: 0.25rem;
+  margin-bottom: 0.1rem;
 }
 
 .dashboard-color-key-item {
