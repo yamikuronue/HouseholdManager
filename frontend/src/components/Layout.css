@@ -25,6 +25,13 @@
   height: 40px;
   width: auto;
   display: block;
+  margin-right: 0.5rem;
+}
+
+.layout-logo-text {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #eee;
 }
 
 .layout-nav {

@@ -17,6 +17,7 @@ export default function Layout() {
       <header className="layout-header">
         <Link to="/dashboard" className="layout-logo">
           <img src="/logo.jpg" alt="Lionfish" className="layout-logo-img" />
+          <span className="layout-logo-text">Lionfish</span>
         </Link>
         <nav className="layout-nav">
           {user && (
