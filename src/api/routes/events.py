@@ -32,10 +32,11 @@ async def get_events(
     start_date: datetime | None = Query(None, description="Start of range (ISO)"),
     end_date: datetime | None = Query(None, description="End of range (ISO)"),
     q: str | None = Query(None, description="Search query (title, description, location)"),
+    household_id: int | None = Query(None, description="Filter to this household's calendars"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get aggregated events from all calendars visible to the current user. Optional q searches via Google Calendar API."""
+    """Get aggregated events from calendars visible to the current user. Optional household_id limits to one household. Optional q searches via Google Calendar API."""
     now = datetime.now(timezone.utc)
     if not start_date:
         start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -49,14 +50,19 @@ async def get_events(
     user_household_ids = [m[0] for m in my_memberships]
 
     if not user_household_ids:
-        return {"events": []}
+        return {"events": [], "skipped_calendars": []}
 
-    # Visible calendars in those households (with member and user for access_token)
+    if household_id is not None and household_id not in user_household_ids:
+        return {"events": [], "skipped_calendars": []}
+
+    household_ids = [household_id] if household_id is not None else user_household_ids
+
+    # Visible calendars in the selected household(s) (with member and user for access_token)
     calendars = (
         db.query(Calendar)
         .join(Member, Calendar.member_id == Member.id)
         .filter(
-            Member.household_id.in_(user_household_ids),
+            Member.household_id.in_(household_ids),
             Calendar.is_visible.is_(True),
         )
         .options(joinedload(Calendar.member).joinedload(Member.user))
@@ -136,17 +142,19 @@ async def get_events(
 
 @router.get("/writable-calendars")
 def get_writable_calendars(
+    household_id: int | None = Query(None, description="Filter to calendars in this household"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List calendars the current user can add events to (calendars they own)."""
-    calendars = (
+    """List calendars the current user can add events to (calendars they own). Optional household_id limits to one household."""
+    q = (
         db.query(Calendar)
         .join(Member, Calendar.member_id == Member.id)
         .filter(Member.user_id == current_user.id)
-        .order_by(Calendar.name)
-        .all()
     )
+    if household_id is not None:
+        q = q.filter(Member.household_id == household_id)
+    calendars = q.order_by(Calendar.name).all()
     return [
         {"id": cal.id, "name": cal.name}
         for cal in calendars

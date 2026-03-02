@@ -94,15 +94,18 @@ export const updateGroceryListItem = (id, data) =>
 export const deleteGroceryListItem = (id) => api.delete(`/api/grocery-list-items/${id}`)
 
 // Events (aggregated)
-export const getEvents = (startDate, endDate, searchQuery = '') => {
+export const getEvents = (startDate, endDate, searchQuery = '', householdId = null) => {
   const params = {}
   if (startDate) params.start_date = startDate?.toISOString?.()
   if (endDate) params.end_date = endDate?.toISOString?.()
   if (searchQuery && String(searchQuery).trim()) params.q = String(searchQuery).trim()
+  if (householdId != null) params.household_id = householdId
   return api.get('/api/events', { params }).then((r) => r.data)
 }
-export const getWritableCalendars = () =>
-  api.get('/api/events/writable-calendars').then((r) => r.data)
+export const getWritableCalendars = (householdId = null) => {
+  const params = householdId != null ? { household_id: householdId } : {}
+  return api.get('/api/events/writable-calendars', { params }).then((r) => r.data)
+}
 export const createEvent = (body) =>
   api.post('/api/events', body).then((r) => r.data)
 

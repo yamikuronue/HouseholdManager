@@ -87,7 +87,7 @@ export default function Dashboard() {
       <div className="dashboard-main">
         <section className="dashboard-section dashboard-calendar">
           <h2>Calendar</h2>
-          <CalendarWidget />
+          <CalendarWidget householdId={dashboardHouseholdId ?? households[0]?.id ?? null} />
         </section>
         <section className="dashboard-section dashboard-todo">
           {loading ? (

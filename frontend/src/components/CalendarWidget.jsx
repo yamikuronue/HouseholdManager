@@ -18,7 +18,7 @@ function formatForGoogleDates(d) {
   return `${year}${month}${day}T${hour}${min}${sec}Z`
 }
 
-function CalendarWidget() {
+function CalendarWidget({ householdId = null }) {
   const { login } = useAuth()
   const [events, setEvents] = useState([])
   const [addModalOpen, setAddModalOpen] = useState(false)
@@ -41,7 +41,7 @@ function CalendarWidget() {
 
   const loadEvents = useCallback((start, end) => {
     if (start) currentRangeRef.current = { start, end }
-    getEvents(start, end, searchQuery)
+    getEvents(start, end, searchQuery, householdId)
       .then((data) => {
         const calendarEvents = (data?.events ?? []).map((event) => ({
           id: event.id,
@@ -64,7 +64,7 @@ function CalendarWidget() {
         console.error('Error loading events:', err)
         setSkippedCalendars([])
       })
-  }, [searchQuery])
+  }, [searchQuery, householdId])
 
   const refreshEvents = useCallback(() => {
     const { start, end } = currentRangeRef.current
@@ -89,6 +89,12 @@ function CalendarWidget() {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     }
   }, [searchQuery, loadEvents])
+
+  // Refetch when household changes (so calendar shows the selected household's events)
+  useEffect(() => {
+    const { start, end } = currentRangeRef.current
+    if (start && end) loadEvents(start, end)
+  }, [householdId])
 
   const openAddModal = useCallback((startDate) => {
     setAddError('')
@@ -117,10 +123,10 @@ function CalendarWidget() {
       end: toLocal(end),
     })
     setAddModalOpen(true)
-    getWritableCalendars()
+    getWritableCalendars(householdId)
       .then(setWritableCalendars)
       .catch(() => setWritableCalendars([]))
-  }, [])
+  }, [householdId])
 
   const closeAddModal = useCallback(() => {
     setAddModalOpen(false)
