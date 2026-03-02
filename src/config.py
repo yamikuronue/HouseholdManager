@@ -58,7 +58,11 @@ class Settings:
             "SECRET_KEY",
             "your-secret-key-change-in-production"
         )
-        
+        # Fernet key(s) for encrypting tokens at rest (optional). ENCRYPTION_KEY_PREVIOUS allows key rotation.
+        # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+        self.ENCRYPTION_KEY: Optional[str] = os.getenv("ENCRYPTION_KEY")
+        self.ENCRYPTION_KEY_PREVIOUS: Optional[str] = os.getenv("ENCRYPTION_KEY_PREVIOUS")
+
         # Frontend URL (where to send user after OAuth; default localhost for dev)
         self.FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
 

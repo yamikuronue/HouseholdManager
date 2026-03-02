@@ -12,15 +12,31 @@ from src.models.schemas import HouseholdCreate, HouseholdResponse, HouseholdUpda
 router = APIRouter(prefix="/api/households", tags=["households"])
 
 
+def _user_household_ids(db: Session, user_id: int) -> list[int]:
+    """Household IDs the user is a member of."""
+    rows = db.query(Member.household_id).filter(Member.user_id == user_id).all()
+    return [r[0] for r in rows]
+
+
 @router.get("", response_model=list[HouseholdResponse])
-def list_households(db: Session = Depends(get_db)):
-    """List all households."""
-    return db.query(Household).all()
+def list_households(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List households the current user is a member of."""
+    hid_list = _user_household_ids(db, current_user.id)
+    if not hid_list:
+        return []
+    return db.query(Household).filter(Household.id.in_(hid_list)).all()
 
 
 @router.post("", response_model=HouseholdResponse, status_code=201)
-def create_household(body: HouseholdCreate, db: Session = Depends(get_db)):
-    """Create a household."""
+def create_household(
+    body: HouseholdCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a household (caller is not auto-added; frontend typically creates then creates member)."""
     household = Household(name=body.name)
     db.add(household)
     db.commit()
@@ -29,8 +45,15 @@ def create_household(body: HouseholdCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{household_id}", response_model=HouseholdResponse)
-def get_household(household_id: int, db: Session = Depends(get_db)):
-    """Get a household by id."""
+def get_household(
+    household_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get a household by id. Only allowed if the user is a member."""
+    hid_list = _user_household_ids(db, current_user.id)
+    if household_id not in hid_list:
+        raise HTTPException(status_code=404, detail="Household not found")
     household = db.get(Household, household_id)
     if not household:
         raise HTTPException(status_code=404, detail="Household not found")
@@ -39,9 +62,15 @@ def get_household(household_id: int, db: Session = Depends(get_db)):
 
 @router.patch("/{household_id}", response_model=HouseholdResponse)
 def update_household(
-    household_id: int, body: HouseholdUpdate, db: Session = Depends(get_db)
+    household_id: int,
+    body: HouseholdUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Update a household."""
+    """Update a household. Only allowed if the user is a member."""
+    hid_list = _user_household_ids(db, current_user.id)
+    if household_id not in hid_list:
+        raise HTTPException(status_code=404, detail="Household not found")
     household = db.get(Household, household_id)
     if not household:
         raise HTTPException(status_code=404, detail="Household not found")

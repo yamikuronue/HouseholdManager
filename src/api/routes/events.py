@@ -10,7 +10,7 @@ from src.db.session import get_db
 from src.models.database import Calendar, Member
 from src.models.schemas import EventCreate
 
-from src.api.routes.auth import get_current_user, refresh_google_token_if_needed
+from src.api.routes.auth import get_current_user, get_decrypted_access_token, refresh_google_token_if_needed
 from src.models.database import User
 
 router = APIRouter(prefix="/api/events", tags=["events"])
@@ -89,7 +89,8 @@ async def get_events(
         for cal in calendars:
             user = cal.member.user
             owner_is_current = user and user.id == current_user.id
-            if not user or not user.access_token:
+            access_token = get_decrypted_access_token(user) if user else None
+            if not user or not access_token:
                 skipped_calendars.append({
                     "calendar_name": cal.name,
                     "owner": _owner_label(cal),
@@ -109,7 +110,7 @@ async def get_events(
                 params["q"] = q.strip()
             resp = await client.get(
                 url,
-                headers={"Authorization": f"Bearer {user.access_token}"},
+                headers={"Authorization": f"Bearer {access_token}"},
                 params=params,
             )
             if resp.status_code != 200:
@@ -182,7 +183,8 @@ async def create_event(
             detail="You can only add events to calendars you own. Select one of your calendars.",
         )
     user = cal.member.user
-    if not user or not user.access_token:
+    access_token = get_decrypted_access_token(user) if user else None
+    if not user or not access_token:
         raise HTTPException(
             status_code=400,
             detail="No Google access token. Sign out and sign in again to grant calendar access.",
@@ -203,7 +205,7 @@ async def create_event(
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             url,
-            headers={"Authorization": f"Bearer {user.access_token}"},
+            headers={"Authorization": f"Bearer {access_token}"},
             json=payload,
         )
     if resp.status_code == 401:

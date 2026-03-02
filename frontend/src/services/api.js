@@ -6,17 +6,17 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 })
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
+// Session is sent via HttpOnly cookie (withCredentials: true). No token in JS.
 
-// Auth
+// Auth (session via HttpOnly cookie; exchange one-time code after OAuth redirect)
 export const getAuthMe = () => api.get('/api/auth/me').then((r) => r.data)
 export const getGoogleAuthUrl = () => `${API_BASE_URL}/api/auth/google`
+export const exchangeCodeForSession = (code) =>
+  api.post('/api/auth/exchange', { code }).then((r) => r.data)
+export const logoutSession = () => api.post('/api/auth/logout')
 export const getGoogleCalendars = () =>
   api.get('/api/auth/google-calendars').then((r) => r.data)
 

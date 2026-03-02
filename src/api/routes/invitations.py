@@ -7,9 +7,11 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from src.api.routes.auth import get_current_user
 from src.config import settings
 from src.db.session import get_db
 from src.models.database import Household, Invitation, Member
+from src.models.database import User
 from src.models.schemas import (
     InvitationAccept,
     InvitationCreate,
@@ -27,15 +29,26 @@ def _generate_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+def _user_household_ids(db: Session, user_id: int) -> list[int]:
+    rows = db.query(Member.household_id).filter(Member.user_id == user_id).all()
+    return [r[0] for r in rows]
+
+
 @router.get("", response_model=list[InvitationResponse])
 def list_invitations(
     household_id: int | None = Query(None, description="Filter by household"),
     status: str | None = Query(None, description="pending | accepted | expired"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List invitations, optionally filtered by household_id and status."""
-    q = db.query(Invitation)
+    """List invitations for households the current user is in."""
+    hid_list = _user_household_ids(db, current_user.id)
+    if not hid_list:
+        return []
+    q = db.query(Invitation).filter(Invitation.household_id.in_(hid_list))
     if household_id is not None:
+        if household_id not in hid_list:
+            return []
         q = q.filter(Invitation.household_id == household_id)
     if status is not None:
         q = q.filter(Invitation.status == status)
@@ -62,8 +75,12 @@ def _send_invite_email_for(inv: Invitation) -> bool | None:
 
 
 @router.post("", response_model=InvitationSendResponse, status_code=201)
-def create_invitation(body: InvitationCreate, db: Session = Depends(get_db)):
-    """Send an invitation to join a household (by email). Records sent_at and last_sent_at; sends email if Mailjet configured."""
+def create_invitation(
+    body: InvitationCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Send an invitation to join a household. Caller must be the inviter (member of that household)."""
     household = db.get(Household, body.household_id)
     if not household:
         raise HTTPException(status_code=404, detail="Household not found")
@@ -72,6 +89,8 @@ def create_invitation(body: InvitationCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=400, detail="invited_by_member_id must be a member of the household"
         )
+    if inviter.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only send invites as yourself (your member in this household)")
     # Reuse pending invitation for same email + household
     existing = (
         db.query(Invitation)
@@ -109,10 +128,17 @@ def create_invitation(body: InvitationCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/resend/{invitation_id}", response_model=InvitationSendResponse)
-def resend_invitation(invitation_id: int, db: Session = Depends(get_db)):
-    """Resend an invitation: update last_sent_at and send email again if Mailjet configured."""
+def resend_invitation(
+    invitation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Resend an invitation. Only allowed for invitations in a household the current user is in."""
     inv = db.get(Invitation, invitation_id)
     if not inv:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+    hid_list = _user_household_ids(db, current_user.id)
+    if inv.household_id not in hid_list:
         raise HTTPException(status_code=404, detail="Invitation not found")
     if inv.status != "pending":
         raise HTTPException(
@@ -126,10 +152,17 @@ def resend_invitation(invitation_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{invitation_id}", status_code=204)
-def delete_invitation(invitation_id: int, db: Session = Depends(get_db)):
-    """Delete an invitation (e.g. to cancel a pending invite)."""
+def delete_invitation(
+    invitation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete an invitation. Only allowed for invitations in a household the current user is in."""
     inv = db.get(Invitation, invitation_id)
     if not inv:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+    hid_list = _user_household_ids(db, current_user.id)
+    if inv.household_id not in hid_list:
         raise HTTPException(status_code=404, detail="Invitation not found")
     db.delete(inv)
     db.commit()
@@ -146,11 +179,16 @@ def get_invitation_by_token(token: str, db: Session = Depends(get_db)):
 
 
 @router.post("/accept", response_model=InvitationResponse)
-def accept_invitation(body: InvitationAccept, db: Session = Depends(get_db)):
+def accept_invitation(
+    body: InvitationAccept,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
-    Accept an invitation: create Member (user_id + household_id) and mark invitation accepted.
-    Call this when the invited user (user_id) accepts the invite (using the token from the link).
+    Accept an invitation for the current user. user_id in body must match current user.
     """
+    if body.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only accept an invitation for yourself")
     inv = db.query(Invitation).filter(Invitation.token == body.token).first()
     if not inv:
         raise HTTPException(status_code=404, detail="Invitation not found")
@@ -167,7 +205,6 @@ def accept_invitation(body: InvitationAccept, db: Session = Depends(get_db)):
         .first()
     )
     if existing:
-        # Already a member; just mark invite accepted
         inv.status = "accepted"
         inv.accepted_at = datetime.utcnow()
         db.commit()

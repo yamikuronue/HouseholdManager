@@ -30,6 +30,12 @@ These should be updated with your actual deployment URLs:
 | `API_HOST` | Backend host | `0.0.0.0` |
 | `API_PORT` | Backend port | `8080` |
 | `ENVIRONMENT` | Environment indicator | `production` |
+| `ENCRYPTION_KEY` | Fernet key for encrypting refresh/access tokens at rest (recommended in production) | Not set (tokens stored plain) |
+| `ENCRYPTION_KEY_PREVIOUS` | Old Fernet key when rotating; used only to decrypt existing tokens | Not set |
+
+To generate a Fernet key: `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Store as an encrypted secret in production.
+
+**Rotating the key:** Set `ENCRYPTION_KEY_PREVIOUS` to the old key and `ENCRYPTION_KEY` to a new key, then deploy. Existing tokens still decrypt (via previous key); new tokens use the new key. Once you no longer need to read old ciphertexts, remove `ENCRYPTION_KEY_PREVIOUS`.
 
 ## Invitation emails (Mailjet, optional)
 

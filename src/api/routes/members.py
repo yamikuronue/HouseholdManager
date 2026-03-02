@@ -12,21 +12,40 @@ from src.models.schemas import MemberCreate, MemberResponse, MemberUpdate
 router = APIRouter(prefix="/api/members", tags=["members"])
 
 
+def _user_household_ids(db: Session, user_id: int) -> list[int]:
+    rows = db.query(Member.household_id).filter(Member.user_id == user_id).all()
+    return [r[0] for r in rows]
+
+
 @router.get("", response_model=list[MemberResponse])
 def list_members(
     household_id: int | None = Query(None, description="Filter by household"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List members, optionally filtered by household_id. Includes user for display name."""
-    q = db.query(Member).options(joinedload(Member.user))
-    if household_id is not None:
-        q = q.filter(Member.household_id == household_id)
-    return q.all()
+    """List members of households the current user is in. Requires household_id; returns only that household's members if user is a member."""
+    if household_id is None:
+        raise HTTPException(status_code=400, detail="household_id is required")
+    hid_list = _user_household_ids(db, current_user.id)
+    if household_id not in hid_list:
+        raise HTTPException(status_code=403, detail="You are not a member of this household")
+    return (
+        db.query(Member)
+        .options(joinedload(Member.user))
+        .filter(Member.household_id == household_id)
+        .all()
+    )
 
 
 @router.post("", response_model=MemberResponse, status_code=201)
-def create_member(body: MemberCreate, db: Session = Depends(get_db)):
-    """Add a member (user) to a household. First member becomes owner."""
+def create_member(
+    body: MemberCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Add the current user as a member of a household (e.g. after creating the household). Only self-add allowed."""
+    if body.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only add yourself as a member")
     existing = (
         db.query(Member)
         .filter(
@@ -42,7 +61,7 @@ def create_member(body: MemberCreate, db: Session = Depends(get_db)):
     count = db.query(func.count(Member.id)).filter(Member.household_id == body.household_id).scalar()
     role = body.role
     if count == 0:
-        role = "owner"  # First member (household creator) is owner/manager
+        role = "owner"
     member = Member(
         user_id=body.user_id,
         household_id=body.household_id,
@@ -55,22 +74,45 @@ def create_member(body: MemberCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{member_id}", response_model=MemberResponse)
-def get_member(member_id: int, db: Session = Depends(get_db)):
-    """Get a member by id."""
+def get_member(
+    member_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get a member by id. Only allowed if the member is in a household the current user is in."""
     member = db.get(Member, member_id)
     if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    hid_list = _user_household_ids(db, current_user.id)
+    if member.household_id not in hid_list:
         raise HTTPException(status_code=404, detail="Member not found")
     return member
 
 
 @router.patch("/{member_id}", response_model=MemberResponse)
 def update_member(
-    member_id: int, body: MemberUpdate, db: Session = Depends(get_db)
+    member_id: int,
+    body: MemberUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Update a member (e.g. role)."""
+    """Update a member. Allowed if same household; only owners can change role."""
     member = db.get(Member, member_id)
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
+    hid_list = _user_household_ids(db, current_user.id)
+    if member.household_id not in hid_list:
+        raise HTTPException(status_code=404, detail="Member not found")
+    my_membership = (
+        db.query(Member)
+        .filter(
+            Member.household_id == member.household_id,
+            Member.user_id == current_user.id,
+        )
+        .first()
+    )
+    if body.role is not None and my_membership and my_membership.role != "owner":
+        raise HTTPException(status_code=403, detail="Only the household owner can change roles")
     if body.role is not None:
         member.role = body.role
     if body.event_color is not None:

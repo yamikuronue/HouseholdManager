@@ -2,6 +2,7 @@
 
 import logging
 import os
+import time
 from pathlib import Path
 
 from contextlib import asynccontextmanager
@@ -15,6 +16,11 @@ from src.api.routes import auth, calendars, events, grocery_lists, households, i
 from src.db.session import init_db, run_migrations
 
 logger = logging.getLogger(__name__)
+
+# Rate limit /api/auth only: in-memory IP -> list of request timestamps
+_AUTH_RATE_LIMIT_WINDOW = 60  # seconds
+_AUTH_RATE_LIMIT_MAX = 20     # requests per window per IP
+_auth_rate_store: dict[str, list[float]] = {}
 
 
 # Directory for frontend static build (single-component deploy). Prefer /app/static in Docker.
@@ -52,6 +58,36 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Secure headers (run after CORS so responses get these)
+@app.middleware("http")
+async def add_secure_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    csp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://api.mailjet.com; frame-ancestors 'none';"
+    response.headers["Content-Security-Policy"] = csp
+    return response
+
+# Rate limit /api/auth only
+@app.middleware("http")
+async def auth_rate_limit(request, call_next):
+    path = request.scope.get("path", "")
+    if not path.startswith("/api/auth"):
+        return await call_next(request)
+    client = request.client
+    ip = client.host if client else "unknown"
+    now = time.monotonic()
+    if ip not in _auth_rate_store:
+        _auth_rate_store[ip] = []
+    times = _auth_rate_store[ip]
+    times[:] = [t for t in times if now - t < _AUTH_RATE_LIMIT_WINDOW]
+    if len(times) >= _AUTH_RATE_LIMIT_MAX:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=429, content={"detail": "Too many requests. Try again later."})
+    times.append(now)
+    return await call_next(request)
 
 # Configure CORS
 app.add_middleware(

@@ -1,29 +1,18 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { getAuthMe, getGoogleAuthUrl } from '../services/api'
+import { getAuthMe, getGoogleAuthUrl, logoutSession } from '../services/api'
 
 const AuthContext = createContext(null)
-
-const TOKEN_KEY = 'token'
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const loadUser = async () => {
-    const token = localStorage.getItem(TOKEN_KEY)
-    if (!token) {
-      setUser(null)
-      setLoading(false)
-      return
-    }
     try {
       const data = await getAuthMe()
       setUser(data)
-    } catch (err) {
-      localStorage.removeItem(TOKEN_KEY)
+    } catch {
       setUser(null)
-      setLoading(false)
-      throw err
     } finally {
       setLoading(false)
     }
@@ -37,18 +26,17 @@ export function AuthProvider({ children }) {
     window.location.href = getGoogleAuthUrl()
   }
 
-  const logout = () => {
-    localStorage.removeItem(TOKEN_KEY)
+  const logout = async () => {
+    try {
+      await logoutSession()
+    } catch {
+      // ignore
+    }
     setUser(null)
   }
 
-  const setToken = (token) => {
-    localStorage.setItem(TOKEN_KEY, token)
-    return loadUser()
-  }
-
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, setToken, loadUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, loadUser }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,37 +1,40 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { exchangeCodeForSession } from '../services/api'
 import './LoginCallback.css'
 
 export default function LoginCallback() {
   const [searchParams] = useSearchParams()
-  const { user, setToken } = useAuth()
+  const { user, loadUser } = useAuth()
   const navigate = useNavigate()
   const [error, setError] = useState(null)
-  const tokenApplied = useRef(false)
+  const codeApplied = useRef(false)
 
   useEffect(() => {
     document.title = 'Signing in - Lionfish'
     return () => { document.title = 'Lionfish' }
   }, [])
 
-  // Apply token from URL once; do not navigate here (state update may not be visible yet).
+  // Exchange one-time code for session cookie, then load user.
   useEffect(() => {
-    const token = searchParams.get('token')
-    if (!token) {
-      setError('No token received. Please try logging in again.')
+    const code = searchParams.get('code')
+    if (!code) {
+      setError('No code received. Please try logging in again.')
       return
     }
-    if (tokenApplied.current) return
-    tokenApplied.current = true
-    setToken(token).catch(() => {
-      setError('Failed to load user. Please try logging in again.')
-    })
-  }, [searchParams, setToken])
+    if (codeApplied.current) return
+    codeApplied.current = true
+    exchangeCodeForSession(code)
+      .then(() => loadUser())
+      .catch(() => {
+        setError('Failed to complete sign in. Please try logging in again.')
+      })
+  }, [searchParams, loadUser])
 
-  // Navigate only after auth context has the user, so ProtectedRoute does not redirect to /login.
+  // Navigate once we have the user.
   useEffect(() => {
-    if (user && tokenApplied.current) {
+    if (user && codeApplied.current) {
       navigate('/dashboard', { replace: true })
     }
   }, [user, navigate])
