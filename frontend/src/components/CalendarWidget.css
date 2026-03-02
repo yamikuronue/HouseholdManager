@@ -7,6 +7,42 @@
 
 .calendar-widget-header {
   margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.calendar-widget-search-wrap {
+  flex: 1;
+  min-width: 200px;
+}
+
+.calendar-search-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 4px;
+}
+
+.calendar-widget-search {
+  width: 100%;
+  max-width: 320px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.calendar-widget-search::placeholder {
+  color: #888;
+}
+
+.calendar-widget-search:focus {
+  outline: none;
+  border-color: #3788d8;
+  box-shadow: 0 0 0 2px rgba(55, 136, 216, 0.2);
 }
 
 .calendar-widget-add-btn {

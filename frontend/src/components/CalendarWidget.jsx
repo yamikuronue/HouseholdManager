@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -34,10 +34,11 @@ function CalendarWidget() {
   const [addSubmitting, setAddSubmitting] = useState(false)
   const calendarRef = useRef(null)
   const currentRangeRef = useRef({ start: null, end: null })
+  const [searchQuery, setSearchQuery] = useState('')
 
   const loadEvents = useCallback((start, end) => {
     if (start) currentRangeRef.current = { start, end }
-    getEvents(start, end)
+    getEvents(start, end, searchQuery)
       .then((data) => {
         const calendarEvents = (data?.events ?? []).map((event) => ({
           id: event.id,
@@ -56,12 +57,31 @@ function CalendarWidget() {
         setEvents(calendarEvents)
       })
       .catch((err) => console.error('Error loading events:', err))
-  }, [])
+  }, [searchQuery])
 
   const refreshEvents = useCallback(() => {
     const { start, end } = currentRangeRef.current
     if (start && end) loadEvents(start, end)
   }, [loadEvents])
+
+  // Refetch when search query changes (debounced)
+  const searchDebounceRef = useRef(null)
+  const isInitialMount = useRef(true)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => {
+      const { start, end } = currentRangeRef.current
+      if (start && end) loadEvents(start, end)
+      searchDebounceRef.current = null
+    }, 300)
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    }
+  }, [searchQuery, loadEvents])
 
   const openAddModal = useCallback((startDate) => {
     setAddError('')
@@ -177,6 +197,20 @@ function CalendarWidget() {
   return (
     <div className="calendar-widget">
       <div className="calendar-widget-header">
+        <div className="calendar-widget-search-wrap">
+          <label htmlFor="calendar-search" className="calendar-search-label">
+            Search events
+          </label>
+          <input
+            id="calendar-search"
+            type="search"
+            className="calendar-widget-search"
+            placeholder="Search events (title, description, location)..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search calendar events"
+          />
+        </div>
         <button
           type="button"
           className="calendar-widget-add-btn"

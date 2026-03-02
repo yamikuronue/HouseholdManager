@@ -31,10 +31,11 @@ def _parse_google_event_time(start_or_end: dict) -> str | None:
 async def get_events(
     start_date: datetime | None = Query(None, description="Start of range (ISO)"),
     end_date: datetime | None = Query(None, description="End of range (ISO)"),
+    q: str | None = Query(None, description="Search query (title, description, location)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get aggregated events from all calendars visible to the current user."""
+    """Get aggregated events from all calendars visible to the current user. Optional q searches via Google Calendar API."""
     now = datetime.now(timezone.utc)
     if not start_date:
         start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -80,6 +81,8 @@ async def get_events(
                 "singleEvents": "true",
                 "orderBy": "startTime",
             }
+            if q and q.strip():
+                params["q"] = q.strip()
             resp = await client.get(
                 url,
                 headers={"Authorization": f"Bearer {user.access_token}"},
