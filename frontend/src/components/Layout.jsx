@@ -18,6 +18,9 @@ export default function Layout() {
 
   return (
     <div className="layout">
+      <a href="#main-content" className="layout-skip-link">
+        Skip to main content
+      </a>
       <header className="layout-header">
         <Link to="/dashboard" className="layout-logo" onClick={closeMenu}>
           <img src="/logo.jpg" alt="Lionfish" className="layout-logo-img" />
@@ -47,7 +50,7 @@ export default function Layout() {
           )}
         </nav>
       </header>
-      <main className="layout-main">
+      <main id="main-content" className="layout-main" tabIndex={-1}>
         <Outlet />
       </main>
     </div>

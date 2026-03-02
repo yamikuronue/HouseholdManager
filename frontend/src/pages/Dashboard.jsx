@@ -40,6 +40,11 @@ export default function Dashboard() {
   }, [load])
 
   useEffect(() => {
+    document.title = 'Dashboard - Lionfish'
+    return () => { document.title = 'Lionfish' }
+  }, [])
+
+  useEffect(() => {
     const hid = dashboardHouseholdId ?? households[0]?.id
     if (!hid) {
       setHouseholdMembers([])

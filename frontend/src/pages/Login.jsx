@@ -1,10 +1,15 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './Login.css'
 
 export default function Login() {
   const { user, loading, login } = useAuth()
+
+  useEffect(() => {
+    document.title = 'Login - Lionfish'
+    return () => { document.title = 'Lionfish' }
+  }, [])
 
   if (loading) return <div className="login-loading">Loading…</div>
   if (user) return <Navigate to="/dashboard" replace />

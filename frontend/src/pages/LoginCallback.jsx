@@ -10,6 +10,11 @@ export default function LoginCallback() {
   const [error, setError] = useState(null)
   const tokenApplied = useRef(false)
 
+  useEffect(() => {
+    document.title = 'Signing in - Lionfish'
+    return () => { document.title = 'Lionfish' }
+  }, [])
+
   // Apply token from URL once; do not navigate here (state update may not be visible yet).
   useEffect(() => {
     const token = searchParams.get('token')

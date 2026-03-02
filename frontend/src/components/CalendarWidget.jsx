@@ -38,6 +38,9 @@ function CalendarWidget({ householdId = null }) {
   const currentRangeRef = useRef({ start: null, end: null })
   const [searchQuery, setSearchQuery] = useState('')
   const [skippedCalendars, setSkippedCalendars] = useState([])
+  const addModalRef = useRef(null)
+  const eventPopoverRef = useRef(null)
+  const previousFocusRef = useRef(/** @type {HTMLElement | null} */ (null))
 
   const loadEvents = useCallback((start, end) => {
     if (start) currentRangeRef.current = { start, end }
@@ -96,7 +99,74 @@ function CalendarWidget({ householdId = null }) {
     if (start && end) loadEvents(start, end)
   }, [householdId])
 
+  // Focus trap and Escape for Add Event modal
+  useEffect(() => {
+    if (!addModalOpen || !addModalRef.current) return
+    const el = addModalRef.current
+    const focusables = getFocusables(el)
+    if (focusables.length > 0) focusables[0].focus()
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        closeAddModal()
+        previousFocusRef.current?.focus?.()
+        return
+      }
+      if (e.key === 'Tab') {
+        const list = getFocusables(el)
+        if (list.length === 0) return
+        const i = list.indexOf(document.activeElement)
+        const next = e.shiftKey ? (i <= 0 ? list.length - 1 : i - 1) : (i >= list.length - 1 ? 0 : i + 1)
+        e.preventDefault()
+        list[next].focus()
+      }
+    }
+    el.addEventListener('keydown', onKey)
+    return () => {
+      el.removeEventListener('keydown', onKey)
+      previousFocusRef.current?.focus?.()
+    }
+  }, [addModalOpen, closeAddModal, getFocusables])
+
+  // Focus trap and Escape for event popover modal
+  useEffect(() => {
+    if (!eventPopoverEvent || !eventPopoverRef.current) return
+    const el = eventPopoverRef.current
+    const focusables = getFocusables(el)
+    if (focusables.length > 0) focusables[0].focus()
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        closeEventPopover()
+        previousFocusRef.current?.focus?.()
+        return
+      }
+      if (e.key === 'Tab') {
+        const list = getFocusables(el)
+        if (list.length === 0) return
+        const i = list.indexOf(document.activeElement)
+        const next = e.shiftKey ? (i <= 0 ? list.length - 1 : i - 1) : (i >= list.length - 1 ? 0 : i + 1)
+        e.preventDefault()
+        list[next].focus()
+      }
+    }
+    el.addEventListener('keydown', onKey)
+    return () => {
+      el.removeEventListener('keydown', onKey)
+      previousFocusRef.current?.focus?.()
+    }
+  }, [eventPopoverEvent, closeEventPopover, getFocusables])
+
+  const getFocusables = useCallback((container) => {
+    if (!container) return []
+    const sel = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    return [...container.querySelectorAll(sel)].filter(
+      (el) => el instanceof HTMLElement && !el.hasAttribute('disabled') && el.offsetParent !== null
+    )
+  }, [])
+
   const openAddModal = useCallback((startDate) => {
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     setAddError('')
     const start = startDate
       ? new Date(startDate)
@@ -195,6 +265,7 @@ function CalendarWidget({ householdId = null }) {
 
   const handleEventClick = useCallback((info) => {
     info.jsEvent.preventDefault()
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const htmlLink = info.event.extendedProps.htmlLink
     setEventPopoverEvent({
       title: info.event.title,
@@ -280,10 +351,12 @@ function CalendarWidget({ householdId = null }) {
       {addModalOpen && (
         <div className="calendar-modal-overlay" onClick={closeAddModal} role="presentation">
           <div
+            ref={addModalRef}
             className="calendar-modal"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-labelledby="add-event-title"
+            aria-modal="true"
           >
             <h2 id="add-event-title" className="calendar-modal-title">
               Add event
@@ -365,10 +438,12 @@ function CalendarWidget({ householdId = null }) {
       {eventPopoverEvent && (
         <div className="calendar-modal-overlay" onClick={closeEventPopover} role="presentation">
           <div
+            ref={eventPopoverRef}
             className="calendar-modal calendar-event-popover"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-labelledby="event-popover-title"
+            aria-modal="true"
           >
             <h2 id="event-popover-title" className="calendar-modal-title">
               {eventPopoverEvent.title}

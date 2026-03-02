@@ -15,6 +15,11 @@ export default function AcceptInvite() {
   const [accepted, setAccepted] = useState(false)
 
   useEffect(() => {
+    document.title = 'Accept invitation - Lionfish'
+    return () => { document.title = 'Lionfish' }
+  }, [])
+
+  useEffect(() => {
     if (!token) {
       setError('Missing invite token in URL.')
       setLoading(false)

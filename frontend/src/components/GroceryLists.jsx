@@ -65,6 +65,16 @@ export default function GroceryLists({ householdId, myMemberId }) {
     loadItems()
   }, [loadItems])
 
+  // Move focus to the active tab when it changes (e.g. after Arrow key navigation)
+  useEffect(() => {
+    if (activeListId) {
+      const tabEl = document.getElementById(`grocery-tab-${activeListId}`)
+      if (tabEl && document.activeElement?.closest?.('.grocery-lists-tabs')) {
+        tabEl.focus()
+      }
+    }
+  }, [activeListId])
+
   const handleAddList = async () => {
     const name = window.prompt('Store or list name (e.g. Costco):', '')
     if (name == null || !name.trim() || !householdId) return
@@ -202,14 +212,34 @@ export default function GroceryLists({ householdId, myMemberId }) {
         <p className="grocery-lists-muted">Loading…</p>
       ) : (
         <>
-          <div className="grocery-lists-tabs" role="tablist">
-            {lists.map((list) => (
+          <div className="grocery-lists-tabs" role="tablist" aria-label="Grocery lists">
+            {lists.map((list, index) => (
               <div
                 key={list.id}
+                id={`grocery-tab-${list.id}`}
                 role="tab"
                 aria-selected={activeListId === list.id}
+                aria-controls={`grocery-tabpanel-${list.id}`}
+                tabIndex={activeListId === list.id ? 0 : -1}
                 className={`grocery-lists-tab ${activeListId === list.id ? 'grocery-lists-tab-active' : ''}`}
                 onClick={() => setActiveListId(list.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowLeft') {
+                    e.preventDefault()
+                    const prev = index > 0 ? lists[index - 1] : lists[lists.length - 1]
+                    if (prev) setActiveListId(prev.id)
+                  } else if (e.key === 'ArrowRight') {
+                    e.preventDefault()
+                    const next = index < lists.length - 1 ? lists[index + 1] : lists[0]
+                    if (next) setActiveListId(next.id)
+                  } else if (e.key === 'Home') {
+                    e.preventDefault()
+                    if (lists[0]) setActiveListId(lists[0].id)
+                  } else if (e.key === 'End') {
+                    e.preventDefault()
+                    if (lists.length) setActiveListId(lists[lists.length - 1].id)
+                  }
+                }}
               >
                 <span className="grocery-lists-tab-label">{list.name}</span>
                 {canDeleteList && (
@@ -228,7 +258,12 @@ export default function GroceryLists({ householdId, myMemberId }) {
           </div>
           {error && <div className="grocery-lists-error">{error}</div>}
           {activeListId && (
-            <div className="grocery-lists-panel">
+            <div
+              id={`grocery-tabpanel-${activeListId}`}
+              role="tabpanel"
+              aria-labelledby={`grocery-tab-${activeListId}`}
+              className="grocery-lists-panel"
+            >
               {loading ? (
                 <p className="grocery-lists-muted">Loading…</p>
               ) : (

@@ -101,6 +101,11 @@ export default function Settings() {
     else setLoading(false)
   }, [user])
 
+  useEffect(() => {
+    document.title = 'Settings - Lionfish'
+    return () => { document.title = 'Lionfish' }
+  }, [])
+
   const loadGoogleCalendars = async () => {
     if (!user) return
     setCalendarListLoading(true)
@@ -368,8 +373,16 @@ export default function Settings() {
   return (
     <div className="dashboard settings-page">
       <h1>Settings</h1>
-      {error && <div className="dashboard-message dashboard-error">{error}</div>}
-      {success && <div className="dashboard-message dashboard-success">{success}</div>}
+      {error && (
+        <div className="dashboard-message dashboard-error" role="alert">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="dashboard-message dashboard-success" role="status" aria-live="polite">
+          {success}
+        </div>
+      )}
 
       {households.length > 0 && (
         <section className="dashboard-section settings-household-context settings-household-context-top">

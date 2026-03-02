@@ -199,7 +199,12 @@ export default function TodoList({ householdId, households = [] }) {
                       onClick={() => handleToggle(item)}
                       role="button"
                       tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && handleToggle(item)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleToggle(item)
+                        }
+                      }}
                     >
                       {item.content || 'New item'}
                     </span>
