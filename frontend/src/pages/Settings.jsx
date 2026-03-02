@@ -29,9 +29,8 @@ export default function Settings() {
   const [invitations, setInvitations] = useState([])
   const [loading, setLoading] = useState(true)
   const [newHouseholdName, setNewHouseholdName] = useState('')
+  const [selectedHouseholdId, setSelectedHouseholdId] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteHouseholdId, setInviteHouseholdId] = useState('')
-  const [calendarHouseholdId, setCalendarHouseholdId] = useState('')
   const [googleCalendars, setGoogleCalendars] = useState([])
   const [calendarListLoading, setCalendarListLoading] = useState(false)
   const [selectedGoogleCalendarId, setSelectedGoogleCalendarId] = useState('')
@@ -42,7 +41,6 @@ export default function Settings() {
   const [myCalendars, setMyCalendars] = useState([])
   const [mealSlotsByHousehold, setMealSlotsByHousehold] = useState({})
   const [newMealSlotName, setNewMealSlotName] = useState('')
-  const [newMealSlotHouseholdId, setNewMealSlotHouseholdId] = useState('')
 
   const DEFAULT_PASTEL_COLORS = [
     '#FFB3BA', '#BAFFC9', '#BAE1FF', '#FFFFBA',
@@ -81,6 +79,15 @@ export default function Settings() {
       const slotsByH = {}
       mineHouseholds.forEach((hh, i) => { slotsByH[hh.id] = slotLists[i] })
       setMealSlotsByHousehold(slotsByH)
+      if (mineHouseholds.length > 0) {
+        setSelectedHouseholdId((prev) => {
+          const id = prev ? parseInt(prev, 10) : null
+          const valid = id != null && mineHouseholds.some((hh) => hh.id === id)
+          return valid ? prev : String(mineHouseholds[0].id)
+        })
+      } else {
+        setSelectedHouseholdId('')
+      }
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
     } finally {
@@ -130,9 +137,9 @@ export default function Settings() {
     e.preventDefault()
     setError('')
     setSuccess('')
-    const hid = inviteHouseholdId ? parseInt(inviteHouseholdId, 10) : null
+    const hid = selectedHouseholdId ? parseInt(selectedHouseholdId, 10) : null
     if (!inviteEmail.trim() || !hid) {
-      setError('Select a household and enter an email.')
+      setError('Choose a household above and enter an email.')
       return
     }
     const members = await listMembers(hid)
@@ -216,9 +223,9 @@ export default function Settings() {
     e.preventDefault()
     setError('')
     setSuccess('')
-    const hid = calendarHouseholdId ? parseInt(calendarHouseholdId, 10) : null
+    const hid = selectedHouseholdId ? parseInt(selectedHouseholdId, 10) : null
     if (!selectedGoogleCalendarId || !hid) {
-      setError('Select household and a calendar.')
+      setError('Choose a household above and a calendar.')
       return
     }
     const selected = googleCalendars.find((c) => c.id === selectedGoogleCalendarId)
@@ -274,9 +281,9 @@ export default function Settings() {
 
   const handleAddMealSlot = async (e) => {
     e.preventDefault()
-    const hid = newMealSlotHouseholdId ? parseInt(newMealSlotHouseholdId, 10) : null
+    const hid = selectedHouseholdId ? parseInt(selectedHouseholdId, 10) : null
     if (!newMealSlotName.trim() || !hid) {
-      setError('Select household and enter a meal type name.')
+      setError('Choose a household above and enter a meal type name.')
       return
     }
     setError('')
@@ -287,7 +294,6 @@ export default function Settings() {
         [hid]: [...(prev[hid] || []), slot],
       }))
       setNewMealSlotName('')
-      setNewMealSlotHouseholdId('')
       setSuccess('Meal type added.')
       setTimeout(() => setSuccess(''), 2000)
     } catch (e) {
@@ -345,6 +351,24 @@ export default function Settings() {
           <button type="submit">Create</button>
         </form>
       </section>
+
+      {households.length > 0 && (
+        <section className="dashboard-section settings-household-context">
+          <label htmlFor="settings-household">Household for forms below:</label>
+          <select
+            id="settings-household"
+            value={selectedHouseholdId}
+            onChange={(e) => setSelectedHouseholdId(e.target.value)}
+            className="settings-household-global-select"
+          >
+            {households.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.name}
+              </option>
+            ))}
+          </select>
+        </section>
+      )}
 
       <section className="dashboard-section">
         <h2>My households</h2>
@@ -446,17 +470,6 @@ export default function Settings() {
       <section className="dashboard-section">
         <h2>Send invite</h2>
         <form onSubmit={handleSendInvite} className="dashboard-form dashboard-form-inline">
-          <select
-            value={inviteHouseholdId}
-            onChange={(e) => setInviteHouseholdId(e.target.value)}
-          >
-            <option value="">Select household</option>
-            {households.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.name}
-              </option>
-            ))}
-          </select>
           <input
             type="email"
             placeholder="Email to invite"
@@ -469,13 +482,18 @@ export default function Settings() {
 
       <section className="dashboard-section">
         <h2>Pending invitations</h2>
-        {invitations.filter((i) => i.status === 'pending').length === 0 ? (
-          <p className="dashboard-muted">No pending invitations.</p>
-        ) : (
+        {(() => {
+          const hid = selectedHouseholdId ? parseInt(selectedHouseholdId, 10) : null
+          const pending = invitations.filter(
+            (i) => i.status === 'pending' && (hid == null || i.household_id === hid)
+          )
+          return pending.length === 0 ? (
+            <p className="dashboard-muted">
+              {hid ? 'No pending invitations for this household.' : 'Select a household above to see pending invitations.'}
+            </p>
+          ) : (
           <ul className="dashboard-list">
-            {invitations
-              .filter((i) => i.status === 'pending')
-              .map((i) => (
+            {pending.map((i) => (
                 <li key={i.id} className="dashboard-list-item-with-action">
                   <span>{i.email} – last sent {new Date(i.last_sent_at).toLocaleDateString()}</span>
                   <span className="dashboard-list-actions">
@@ -497,7 +515,8 @@ export default function Settings() {
                 </li>
               ))}
           </ul>
-        )}
+          )
+        })()}
       </section>
 
       <section className="dashboard-section">
@@ -539,17 +558,6 @@ export default function Settings() {
       <section className="dashboard-section">
         <h2>Add calendar</h2>
         <form onSubmit={handleAddCalendar} className="dashboard-form dashboard-form-column">
-          <select
-            value={calendarHouseholdId}
-            onChange={(e) => setCalendarHouseholdId(e.target.value)}
-          >
-            <option value="">Select household</option>
-            {households.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.name}
-              </option>
-            ))}
-          </select>
           <select
             value={selectedGoogleCalendarId}
             onChange={(e) => setSelectedGoogleCalendarId(e.target.value)}
@@ -608,17 +616,6 @@ export default function Settings() {
             </div>
           ))}
           <form onSubmit={handleAddMealSlot} className="dashboard-form dashboard-form-inline">
-            <select
-              value={newMealSlotHouseholdId}
-              onChange={(e) => setNewMealSlotHouseholdId(e.target.value)}
-            >
-              <option value="">Select household</option>
-              {households.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name}
-                </option>
-              ))}
-            </select>
             <input
               type="text"
               placeholder="Meal type (e.g. Snack)"

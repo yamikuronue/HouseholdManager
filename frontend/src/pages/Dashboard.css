@@ -1,7 +1,25 @@
-.dashboard h1 {
+.dashboard-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.dashboard-header-row h1 {
+  margin: 0;
   font-size: 1.5rem;
   color: #1a1a2e;
+}
+
+.dashboard-household-name {
+  font-size: 1.1rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.dashboard-household-dropdown {
+  min-width: 180px;
 }
 
 .dashboard-loading {
@@ -205,6 +223,27 @@
   color: #fff;
 }
 
+.settings-household-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-household-context label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.settings-household-global-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  min-width: 200px;
+}
+
 .dashboard-muted {
   color: #666;
   font-size: 0.95rem;
@@ -286,7 +325,6 @@
 }
 
 .dashboard-household-select {
-  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;

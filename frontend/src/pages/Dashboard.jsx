@@ -54,25 +54,36 @@ export default function Dashboard() {
   const myMemberForHousehold = myMembers.find((m) => m.household_id === dashboardHouseholdId)
   const mealPlannerWeeks = selectedHousehold?.meal_planner_weeks ?? 2
 
+  const currentHouseholdName = selectedHousehold?.name ?? (households.length === 1 ? households[0]?.name : null)
+
   return (
     <div className="dashboard">
-      <h1>Dashboard</h1>
-      {households.length > 1 && (
-        <div className="dashboard-household-select">
-          <label htmlFor="dashboard-household">Household:</label>
-          <select
-            id="dashboard-household"
-            value={dashboardHouseholdId ?? ''}
-            onChange={(e) => setDashboardHouseholdId(e.target.value ? parseInt(e.target.value, 10) : null)}
-          >
-            {households.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      <div className="dashboard-header-row">
+        <h1>Dashboard</h1>
+        {households.length > 0 && (
+          <div className="dashboard-household-select">
+            {households.length > 1 ? (
+              <>
+                <label htmlFor="dashboard-household">Household:</label>
+                <select
+                  id="dashboard-household"
+                  value={dashboardHouseholdId ?? ''}
+                  onChange={(e) => setDashboardHouseholdId(e.target.value ? parseInt(e.target.value, 10) : null)}
+                  className="dashboard-household-dropdown"
+                >
+                  {households.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.name}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : (
+              <span className="dashboard-household-name">{currentHouseholdName}</span>
+            )}
+          </div>
+        )}
+      </div>
       <div className="dashboard-main">
         <section className="dashboard-section dashboard-calendar">
           <h2>Calendar</h2>
