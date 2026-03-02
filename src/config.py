@@ -62,6 +62,12 @@ class Settings:
         # Frontend URL (where to send user after OAuth; default localhost for dev)
         self.FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
+        # Email via Mailjet API (optional; if not set, invite emails are not sent but invite link is still created)
+        self.MAILJET_API_KEY: Optional[str] = os.getenv("MAILJET_API_KEY")
+        self.MAILJET_SECRET_KEY: Optional[str] = os.getenv("MAILJET_SECRET_KEY")
+        self.MAIL_FROM: str = os.getenv("MAIL_FROM", "noreply@lionfish.cloud")
+        self.MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME", "Lionfish")
+
     @property
     def frontend_base_url(self) -> str:
         """Base URL for post-OAuth redirect. Prefer deriving from GOOGLE_REDIRECT_URI in production."""

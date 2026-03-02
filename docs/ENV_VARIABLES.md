@@ -31,6 +31,19 @@ These should be updated with your actual deployment URLs:
 | `API_PORT` | Backend port | `8080` |
 | `ENVIRONMENT` | Environment indicator | `production` |
 
+## Invitation emails (Mailjet, optional)
+
+To send invitation emails when someone clicks **Send invite** (or **Resend**), set Mailjet API credentials. If not set, the invite is still created and the link can be copied manually.
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `MAILJET_API_KEY` | Mailjet API key | From [Mailjet Account Settings](https://app.mailjet.com/account/api_keys) |
+| `MAILJET_SECRET_KEY` | Mailjet Secret key | From same page; store as **encrypted** secret |
+| `MAIL_FROM` | Sender email (must be verified in Mailjet) | `noreply@lionfish.cloud` |
+| `MAIL_FROM_NAME` | Sender display name | `Lionfish` |
+
+Get API key and Secret from [Mailjet](https://www.mailjet.com/) → Account → API Keys. Verify your sender email/domain in Mailjet so messages are delivered.
+
 ## Setting Variables in DigitalOcean App Platform
 
 ### Via Web Console:
@@ -76,6 +89,12 @@ SECRET_KEY=your-local-secret-key
 
 # Frontend
 FRONTEND_URL=http://localhost:3000
+
+# Invitation emails via Mailjet (optional; omit to skip sending)
+# MAILJET_API_KEY=your-api-key
+# MAILJET_SECRET_KEY=your-secret-key
+# MAIL_FROM=noreply@yourdomain.com
+# MAIL_FROM_NAME=Lionfish
 ```
 
 **⚠️ Never commit `.env` to git!** It's already in `.gitignore`.
