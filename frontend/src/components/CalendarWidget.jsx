@@ -4,6 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { getEvents, getWritableCalendars, createEvent } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import './CalendarWidget.css'
 
 function formatForGoogleDates(d) {
@@ -18,6 +19,7 @@ function formatForGoogleDates(d) {
 }
 
 function CalendarWidget() {
+  const { login } = useAuth()
   const [events, setEvents] = useState([])
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [eventPopoverEvent, setEventPopoverEvent] = useState(null)
@@ -203,9 +205,27 @@ function CalendarWidget() {
     <div className="calendar-widget">
       {skippedCalendars.length > 0 && (
         <div className="calendar-widget-warning" role="alert">
-          <strong>Some calendars could not be loaded:</strong>{' '}
-          {skippedCalendars.map((s) => `${s.calendar_name} (${s.owner})`).join(', ')}.
-          Ask these members to sign in again to refresh their calendar access.
+          {skippedCalendars.some((s) => s.owner_is_current_user) ? (
+            <>
+              <strong>Your calendars could not be loaded.</strong> Sign in again with Google to
+              restore access to your events.
+              <div className="calendar-widget-warning-actions">
+                <button
+                  type="button"
+                  className="calendar-widget-reconnect-btn"
+                  onClick={() => login()}
+                >
+                  Sign in again with Google
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <strong>Some calendars could not be loaded:</strong>{' '}
+              {skippedCalendars.map((s) => `${s.calendar_name} (${s.owner})`).join(', ')}. Ask these
+              members to sign in again to refresh their calendar access.
+            </>
+          )}
         </div>
       )}
       <div className="calendar-widget-header">

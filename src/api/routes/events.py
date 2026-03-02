@@ -82,8 +82,13 @@ async def get_events(
     async with httpx.AsyncClient() as client:
         for cal in calendars:
             user = cal.member.user
+            owner_is_current = user and user.id == current_user.id
             if not user or not user.access_token:
-                skipped_calendars.append({"calendar_name": cal.name, "owner": _owner_label(cal)})
+                skipped_calendars.append({
+                    "calendar_name": cal.name,
+                    "owner": _owner_label(cal),
+                    "owner_is_current_user": owner_is_current,
+                })
                 continue
             url = (
                 f"https://www.googleapis.com/calendar/v3/calendars/{cal.google_calendar_id}/events"
@@ -102,7 +107,11 @@ async def get_events(
                 params=params,
             )
             if resp.status_code != 200:
-                skipped_calendars.append({"calendar_name": cal.name, "owner": _owner_label(cal)})
+                skipped_calendars.append({
+                    "calendar_name": cal.name,
+                    "owner": _owner_label(cal),
+                    "owner_is_current_user": owner_is_current,
+                })
                 continue
             data = resp.json()
             for item in data.get("items") or []:
