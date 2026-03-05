@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Footer from './Footer'
 import './Layout.css'
 
 export default function Layout() {
@@ -53,6 +54,7 @@ export default function Layout() {
       <main id="main-content" className="layout-main" tabIndex={-1}>
         <Outlet />
       </main>
+      <Footer />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { getInvitationByToken, acceptInvitation } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import Footer from '../components/Footer'
 import './AcceptInvite.css'
 
 export default function AcceptInvite() {
@@ -44,47 +45,62 @@ export default function AcceptInvite() {
   }
 
   if (authLoading || loading) {
-    return <div className="accept-invite-loading">Loading…</div>
+    return (
+      <div className="accept-invite-wrapper">
+        <div className="accept-invite-loading">Loading…</div>
+        <Footer />
+      </div>
+    )
   }
 
   if (!token || error) {
     return (
-      <div className="accept-invite-page">
-        <div className="accept-invite-card">
-          <h1>Invalid invite</h1>
-          <p>{error || 'Missing token.'}</p>
-          <a href="/dashboard">Go to Dashboard</a>
+      <div className="accept-invite-wrapper">
+        <div className="accept-invite-page">
+          <div className="accept-invite-card">
+            <h1>Invalid invite</h1>
+            <p>{error || 'Missing token.'}</p>
+            <a href="/dashboard">Go to Dashboard</a>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
   if (!user) {
     return (
-      <div className="accept-invite-page">
-        <div className="accept-invite-card">
-          <h1>Sign in to accept</h1>
-          <p>You need to log in with Google to accept this household invite.</p>
-          <a href="/login">Login with Google</a>
+      <div className="accept-invite-wrapper">
+        <div className="accept-invite-page">
+          <div className="accept-invite-card">
+            <h1>Sign in to accept</h1>
+            <p>You need to log in with Google to accept this household invite.</p>
+            <a href="/login">Login with Google</a>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
   if (accepted) {
     return (
-      <div className="accept-invite-page">
-        <div className="accept-invite-card accept-invite-success">
+      <div className="accept-invite-wrapper">
+        <div className="accept-invite-page">
+          <div className="accept-invite-card accept-invite-success">
           <h1>You’re in!</h1>
           <p>Redirecting to your dashboard…</p>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
   return (
-    <div className="accept-invite-page">
-      <div className="accept-invite-card">
+    <div className="accept-invite-wrapper">
+      <div className="accept-invite-page">
+        <div className="accept-invite-card">
         <h1>Accept invitation</h1>
         {invitation && (
           <>
@@ -101,7 +117,9 @@ export default function AcceptInvite() {
         <button type="button" className="accept-invite-btn" onClick={handleAccept}>
           Accept invite
         </button>
+        </div>
       </div>
+      <Footer />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { exchangeCodeForSession } from '../services/api'
+import Footer from '../components/Footer'
 import './LoginCallback.css'
 
 export default function LoginCallback() {
@@ -41,18 +42,24 @@ export default function LoginCallback() {
 
   if (error) {
     return (
-      <div className="login-callback">
-        <div className="login-callback-card">
-          <p className="login-callback-error">{error}</p>
-          <a href="/login">Back to Login</a>
+      <div className="login-callback-wrapper">
+        <div className="login-callback">
+          <div className="login-callback-card">
+            <p className="login-callback-error">{error}</p>
+            <a href="/login">Back to Login</a>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
   return (
-    <div className="login-callback">
-      <p>Completing sign in…</p>
+    <div className="login-callback-wrapper">
+      <div className="login-callback">
+        <p>Completing sign in…</p>
+      </div>
+      <Footer />
     </div>
   )
 }

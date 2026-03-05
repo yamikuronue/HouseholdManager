@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Footer from '../components/Footer'
 import './Login.css'
 
 export default function Login() {
@@ -16,6 +17,7 @@ export default function Login() {
 
   return (
     <div className="login-page">
+      <div className="login-page-content">
       <div className="login-card">
         <img src="/logo.jpg" alt="Lionfish" className="login-logo" />
         <h1>Lionfish</h1>
@@ -36,6 +38,8 @@ export default function Login() {
           Login with Google
         </button>
       </div>
+      </div>
+      <Footer />
     </div>
   )
 }

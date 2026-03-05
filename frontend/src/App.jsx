@@ -7,6 +7,7 @@ import LoginCallback from './pages/LoginCallback'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
 import AcceptInvite from './pages/AcceptInvite'
+import Privacy from './pages/Privacy'
 import './App.css'
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/login/callback" element={<LoginCallback />} />
       <Route path="/invite/accept" element={<AcceptInvite />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route
         path="/"
         element={
