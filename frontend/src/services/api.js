@@ -68,6 +68,8 @@ export const listPlannedMeals = (householdId, startDate, endDate) =>
   }).then((r) => r.data)
 export const createOrUpdatePlannedMeal = (body) =>
   api.post('/api/planned-meals', body).then((r) => r.data)
+export const updatePlannedMeal = (id, data) =>
+  api.patch(`/api/planned-meals/${id}`, data).then((r) => r.data)
 export const deletePlannedMeal = (id) => api.delete(`/api/planned-meals/${id}`)
 export const swapPlannedMeals = (mealIdA, mealIdB) =>
   api.post('/api/planned-meals/swap', { meal_id_a: mealIdA, meal_id_b: mealIdB })

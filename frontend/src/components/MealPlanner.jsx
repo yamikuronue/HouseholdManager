@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import {
   listMealSlots,
   listPlannedMeals,
-  createOrUpdatePlannedMeal,
+  updatePlannedMeal,
   deletePlannedMeal,
   swapPlannedMeals,
 } from '../services/api'
@@ -118,13 +118,11 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
   }
 
   const handleDragStart = (e, meal, dateStr, slotId) => {
-    if (!meal || myMemberId == null || Number(meal.member_id) !== Number(myMemberId)) return
+    if (!meal) return
     e.dataTransfer.setData(DRAG_MEAL_TYPE, JSON.stringify({
       dateStr,
       slotId,
       mealId: meal.id,
-      description: meal.description,
-      member_id: meal.member_id,
     }))
     e.dataTransfer.effectAllowed = 'move'
     setDraggingFrom({ dateStr, slotId })
@@ -157,7 +155,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
     } catch {
       return
     }
-    const { dateStr: sourceDateStr, slotId: sourceSlotId, mealId: sourceMealId, description, member_id } = payload
+    const { dateStr: sourceDateStr, slotId: sourceSlotId, mealId: sourceMealId } = payload
     if (sourceDateStr === targetDateStr && sourceSlotId === targetSlotId) return
     const targetMeal = getMealFor(targetDateStr, targetSlotId)
     setError('')
@@ -165,14 +163,10 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
       if (targetMeal) {
         await swapPlannedMeals(sourceMealId, targetMeal.id)
       } else {
-        await createOrUpdatePlannedMeal({
-          household_id: householdId,
+        await updatePlannedMeal(sourceMealId, {
           meal_date: targetDateStr,
           meal_slot_id: targetSlotId,
-          member_id,
-          description: description ?? '',
         })
-        await deletePlannedMeal(sourceMealId)
       }
       if (loadRef.current) await loadRef.current()
     } catch (err) {
@@ -256,10 +250,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
                       draggingFrom?.dateStr === dateStr && draggingFrom?.slotId === slot.id
                     const isDropTarget =
                       dropTarget?.dateStr === dateStr && dropTarget?.slotId === slot.id
-                    const canDrag =
-                      meal &&
-                      myMemberId != null &&
-                      Number(meal.member_id) === Number(myMemberId)
+                    const canDrag = !!meal
                     return (
                       <td
                         key={`${dateStr}-${slot.id}`}

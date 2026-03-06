@@ -185,6 +185,11 @@ class PlannedMealCreate(BaseModel):
     description: Optional[str] = None
 
 
+class PlannedMealUpdate(BaseModel):
+    meal_date: Optional[str] = None  # ISO date "YYYY-MM-DD"
+    meal_slot_id: Optional[int] = None
+
+
 class PlannedMealSwap(BaseModel):
     meal_id_a: int
     meal_id_b: int

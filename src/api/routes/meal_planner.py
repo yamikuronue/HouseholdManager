@@ -15,6 +15,7 @@ from src.models.schemas import (
     PlannedMealCreate,
     PlannedMealResponse,
     PlannedMealSwap,
+    PlannedMealUpdate,
 )
 
 router = APIRouter(prefix="/api", tags=["meal_planner"])
@@ -201,6 +202,39 @@ def create_or_update_planned_meal(
         description=body.description,
     )
     db.add(meal)
+    db.commit()
+    db.refresh(meal)
+    meal.member = db.get(Member, meal.member_id)
+    meal.member.user = db.get(User, meal.member.user_id)
+    return PlannedMealResponse(
+        id=meal.id,
+        household_id=meal.household_id,
+        meal_date=meal.meal_date.isoformat(),
+        meal_slot_id=meal.meal_slot_id,
+        member_id=meal.member_id,
+        member_display_name=meal.member.user.display_name or meal.member.user.email,
+        member_color=meal.member.event_color,
+        description=meal.description,
+        created_at=meal.created_at,
+    )
+
+
+@router.patch("/planned-meals/{meal_id}", response_model=PlannedMealResponse)
+def update_planned_meal(
+    meal_id: int,
+    body: PlannedMealUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update a planned meal's date or slot. Any household member can move any meal."""
+    meal = db.get(PlannedMeal, meal_id)
+    if not meal:
+        raise HTTPException(status_code=404, detail="Planned meal not found")
+    _ensure_member(db, current_user.id, meal.household_id)
+    if body.meal_date is not None:
+        meal.meal_date = date.fromisoformat(body.meal_date)
+    if body.meal_slot_id is not None:
+        meal.meal_slot_id = body.meal_slot_id
     db.commit()
     db.refresh(meal)
     meal.member = db.get(Member, meal.member_id)

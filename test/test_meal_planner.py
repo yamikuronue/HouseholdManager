@@ -305,6 +305,79 @@ def test_delete_planned_meal_403_when_other_household(client, user, auth_headers
     assert r.status_code == 403
 
 
+# ----- Update planned meal (move) -----
+
+
+def test_update_planned_meal_move(client, user, household, member, auth_headers, db):
+    """Any household member can move a planned meal to another date/slot."""
+    slot_b = MealSlot(household_id=household.id, name="Breakfast", position=0)
+    slot_l = MealSlot(household_id=household.id, name="Lunch", position=1)
+    db.add_all([slot_b, slot_l])
+    db.commit()
+    db.refresh(slot_b)
+    db.refresh(slot_l)
+    d1 = date.today()
+    d2 = d1 + timedelta(days=1)
+    meal = PlannedMeal(
+        household_id=household.id,
+        meal_date=d1,
+        meal_slot_id=slot_b.id,
+        member_id=member.id,
+        description="Pancakes",
+    )
+    db.add(meal)
+    db.commit()
+    db.refresh(meal)
+
+    r = client.patch(
+        f"/api/planned-meals/{meal.id}",
+        json={"meal_date": d2.isoformat(), "meal_slot_id": slot_l.id},
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["meal_date"] == d2.isoformat()
+    assert data["meal_slot_id"] == slot_l.id
+    assert data["description"] == "Pancakes"
+
+
+def test_update_planned_meal_403_when_other_household(client, user, auth_headers, db):
+    """Cannot move a meal that belongs to another household."""
+    uid = uuid.uuid4().hex[:12]
+    other = Household(name="Other", meal_planner_weeks=2)
+    db.add(other)
+    db.commit()
+    db.refresh(other)
+    other_user = User(google_sub=f"other-{uid}", email=f"other-{uid}@x.com")
+    db.add(other_user)
+    db.commit()
+    db.refresh(other_user)
+    other_member = Member(user_id=other_user.id, household_id=other.id)
+    db.add(other_member)
+    db.commit()
+    db.refresh(other_member)
+    slot = MealSlot(household_id=other.id, name="Lunch", position=0)
+    db.add(slot)
+    db.commit()
+    db.refresh(slot)
+    meal = PlannedMeal(
+        household_id=other.id,
+        meal_date=date.today(),
+        meal_slot_id=slot.id,
+        member_id=other_member.id,
+    )
+    db.add(meal)
+    db.commit()
+    db.refresh(meal)
+
+    r = client.patch(
+        f"/api/planned-meals/{meal.id}",
+        json={"meal_date": date.today().isoformat(), "meal_slot_id": slot.id},
+        headers=auth_headers,
+    )
+    assert r.status_code == 403
+
+
 # ----- Swap planned meals -----
 
 
@@ -387,6 +460,7 @@ def test_swap_planned_meals_404(client, user, household, member, auth_headers, d
 
 
 def test_swap_planned_meals_400_different_households(client, user, auth_headers, db):
+    uid = uuid.uuid4().hex[:12]
     h1 = Household(name="H1", meal_planner_weeks=2)
     h2 = Household(name="H2", meal_planner_weeks=2)
     db.add_all([h1, h2])
@@ -409,7 +483,7 @@ def test_swap_planned_meals_400_different_households(client, user, auth_headers,
         meal_slot_id=s1.id,
         member_id=member.id,
     )
-    other_user = User(google_sub="o", email="o@x.com")
+    other_user = User(google_sub=f"other-{uid}", email=f"other-{uid}@x.com")
     db.add(other_user)
     db.commit()
     db.refresh(other_user)
@@ -437,11 +511,12 @@ def test_swap_planned_meals_400_different_households(client, user, auth_headers,
 
 
 def test_swap_planned_meals_403_when_not_member(client, user, auth_headers, db):
+    uid = uuid.uuid4().hex[:12]
     other_h = Household(name="Other", meal_planner_weeks=2)
     db.add(other_h)
     db.commit()
     db.refresh(other_h)
-    other_user = User(google_sub="o2", email="o2@x.com")
+    other_user = User(google_sub=f"other-{uid}", email=f"other-{uid}@x.com")
     db.add(other_user)
     db.commit()
     db.refresh(other_user)
