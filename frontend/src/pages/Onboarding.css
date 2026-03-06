@@ -1,0 +1,248 @@
+.onboarding {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #f0f4f8 0%, #e2e8f0 100%);
+  padding: 1.5rem;
+}
+
+.onboarding-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  font-size: 1.1rem;
+  color: #64748b;
+}
+
+.onboarding-main {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 1rem 0 3rem;
+}
+
+.onboarding-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  padding: 2rem;
+}
+
+.onboarding-card.onboarding-error {
+  text-align: center;
+}
+
+.onboarding-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.onboarding-welcome {
+  font-size: 1.05rem;
+  color: #475569;
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.onboarding-welcome strong {
+  color: #1e293b;
+}
+
+.onboarding-error-msg {
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.onboarding-section {
+  margin-bottom: 2rem;
+}
+
+.onboarding-section h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.35rem;
+}
+
+.onboarding-muted {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0 0 1rem;
+  line-height: 1.45;
+}
+
+.onboarding-color-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.onboarding-color-swatch {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.onboarding-color-swatch:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.onboarding-color-swatch[aria-pressed="true"] {
+  border-color: #1e293b;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1e293b;
+}
+
+.onboarding-color-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #475569;
+  cursor: pointer;
+}
+
+.onboarding-color-input {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.onboarding-calendar-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.onboarding-calendar-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.onboarding-calendar-remove {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.onboarding-calendar-remove:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.onboarding-calendar-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.onboarding-calendar-form select {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.onboarding-calendar-form button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  background: #1e293b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.onboarding-calendar-form button:hover:not(:disabled) {
+  background: #334155;
+}
+
+.onboarding-calendar-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.onboarding-actions {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.onboarding-btn {
+  padding: 0.85rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.onboarding-btn-primary {
+  background: #1a1a2e;
+  color: #fff;
+  width: 100%;
+  max-width: 280px;
+}
+
+.onboarding-btn-primary:hover {
+  background: #16213e;
+}
+
+.onboarding-skip {
+  background: transparent;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-decoration: underline;
+}
+
+.onboarding-skip:hover {
+  color: #475569;
+}
+
+@media (max-width: 480px) {
+  .onboarding {
+    padding: 1rem;
+  }
+
+  .onboarding-card {
+    padding: 1.5rem;
+  }
+
+  .onboarding-title {
+    font-size: 1.5rem;
+  }
+}

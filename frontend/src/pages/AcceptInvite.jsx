@@ -13,7 +13,6 @@ export default function AcceptInvite() {
   const [invitation, setInvitation] = useState(null)
   const [loading, setLoading] = useState(!!token)
   const [error, setError] = useState('')
-  const [accepted, setAccepted] = useState(false)
 
   useEffect(() => {
     document.title = 'Accept invitation - Lionfish'
@@ -36,9 +35,14 @@ export default function AcceptInvite() {
     if (!user || !token) return
     setError('')
     try {
-      await acceptInvitation({ token, user_id: user.id })
-      setAccepted(true)
-      setTimeout(() => navigate('/dashboard'), 2000)
+      const res = await acceptInvitation({ token, user_id: user.id })
+      const householdId = res?.household_id ?? invitation?.household_id
+      if (householdId != null) {
+        navigate(`/onboarding?household_id=${householdId}`, { replace: true })
+      } else {
+        setAccepted(true)
+        setTimeout(() => navigate('/dashboard'), 2000)
+      }
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
     }
@@ -76,20 +80,6 @@ export default function AcceptInvite() {
             <h1>Sign in to accept</h1>
             <p>You need to log in with Google to accept this household invite.</p>
             <a href="/login">Login with Google</a>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    )
-  }
-
-  if (accepted) {
-    return (
-      <div className="accept-invite-wrapper">
-        <div className="accept-invite-page">
-          <div className="accept-invite-card accept-invite-success">
-          <h1>You’re in!</h1>
-          <p>Redirecting to your dashboard…</p>
           </div>
         </div>
         <Footer />
