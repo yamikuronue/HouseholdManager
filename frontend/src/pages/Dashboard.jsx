@@ -138,6 +138,7 @@ export default function Dashboard() {
               householdId={dashboardHouseholdId ?? (households[0]?.id ?? null)}
               myMemberId={myMemberForHousehold?.id ?? null}
               mealPlannerWeeks={mealPlannerWeeks}
+              householdMembers={householdMembers}
             />
           </section>
         </>

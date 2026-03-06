@@ -11,7 +11,7 @@ import './MealPlanner.css'
 const ISO_DATE = (d) => d.toISOString().slice(0, 10)
 const DRAG_MEAL_TYPE = 'application/x-lionfish-meal'
 
-export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks = 2 }) {
+export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks = 2, householdMembers = [] }) {
   const [slots, setSlots] = useState([])
   const [meals, setMeals] = useState([])
   const [loading, setLoading] = useState(false)
@@ -65,6 +65,11 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
 
   const getMealFor = (dateStr, slotId) =>
     meals.find((m) => m.meal_date === dateStr && m.meal_slot_id === slotId)
+
+  const getMemberColor = (memberId) => {
+    const member = householdMembers.find((m) => Number(m.id) === Number(memberId))
+    return member?.event_color || null
+  }
 
   const [editingCell, setEditingCell] = useState(null)
   const editingInputRef = useRef(null)
@@ -275,7 +280,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
                         ) : meal ? (
                           <span
                             className="meal-planner-entry"
-                            style={{ borderLeftColor: meal.member_color || '#888' }}
+                            style={{ borderLeftColor: meal.member_color || getMemberColor(meal.member_id) || '#888' }}
                             title={meal.member_display_name ? `${label} (${meal.member_display_name})` : label}
                           >
                             {canDrag && (

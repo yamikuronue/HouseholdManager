@@ -140,6 +140,10 @@ def list_planned_meals(
         )
         .all()
     )
+    # Refresh each member so we have the latest event_color (e.g. after they change it in Settings)
+    for m in meals:
+        if m.member_id:
+            db.refresh(m.member)
     return [
         PlannedMealResponse(
             id=m.id,
