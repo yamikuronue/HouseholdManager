@@ -7,6 +7,7 @@ from src.api.routes.auth import get_current_user
 from src.db.session import get_db
 from src.models.database import GroceryList, GroceryListItem, Member, User
 from src.models.schemas import (
+    DEFAULT_MEMBER_EVENT_COLOR,
     GroceryListCreate,
     GroceryListResponse,
     GroceryListUpdate,
@@ -118,12 +119,13 @@ def delete_grocery_list(
 
 def _item_to_response(db: Session, item: GroceryListItem) -> GroceryListItemResponse:
     member_name = None
-    member_color = None
+    member_color = DEFAULT_MEMBER_EVENT_COLOR
     if item.member_id:
         member = db.get(Member, item.member_id)
-        if member and member.user:
-            member_name = member.user.display_name or member.user.email
-            member_color = member.event_color
+        if member:
+            if member.user:
+                member_name = member.user.display_name or member.user.email
+            member_color = member.event_color or DEFAULT_MEMBER_EVENT_COLOR
     return GroceryListItemResponse(
         id=item.id,
         grocery_list_id=item.grocery_list_id,

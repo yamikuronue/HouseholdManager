@@ -45,6 +45,13 @@
   margin-bottom: 2px;
 }
 
+.todo-item-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
 .todo-item-drag-handle {
   flex-shrink: 0;
   cursor: grab;

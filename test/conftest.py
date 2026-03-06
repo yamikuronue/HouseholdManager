@@ -8,13 +8,15 @@ os.environ["DATABASE_URL"] = os.getenv(
 os.environ["TESTING"] = "1"  # Skip Alembic migrations in app lifespan; init_db() creates schema
 
 import pytest
-from src.db.session import SessionLocal, init_db
+from src.db.session import SessionLocal, engine
+from src.models.database import Base
 
 
 @pytest.fixture(scope="session")
 def db_engine():
-    """Create tables once per test session."""
-    init_db()
+    """Create tables from current models (drop then create so schema matches code)."""
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
     yield
 
 

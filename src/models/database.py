@@ -156,6 +156,9 @@ class TodoItem(Base):
     household_id = Column(
         Integer, ForeignKey("households.id", ondelete="CASCADE"), nullable=False
     )
+    member_id = Column(
+        Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True
+    )
     content = Column(String(500), nullable=False)
     is_section_header = Column(Boolean, default=False)
     is_checked = Column(Boolean, default=False)
@@ -165,6 +168,7 @@ class TodoItem(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     household = relationship("Household", back_populates="todo_items")
+    member = relationship("Member")
 
 
 class MealSlot(Base):

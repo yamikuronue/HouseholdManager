@@ -242,6 +242,9 @@ class TodoItemResponse(BaseModel):
     checked_at: Optional[datetime] = None
     position: int
     created_at: datetime
+    member_id: Optional[int] = None
+    member_display_name: Optional[str] = None
+    member_color: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 

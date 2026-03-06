@@ -303,13 +303,12 @@ export default function GroceryLists({ householdId, myMemberId }) {
                           </>
                         ) : (
                           <>
-                            {item.member_color && (
-                              <span
-                                className="grocery-list-item-dot"
-                                style={{ backgroundColor: item.member_color }}
-                                title={item.member_display_name || ''}
-                              />
-                            )}
+                            <span
+                              className="grocery-list-item-dot"
+                              style={{ backgroundColor: item.member_color || '#888' }}
+                              title={item.member_display_name || ''}
+                              aria-hidden
+                            />
                             <span className="grocery-list-item-label">
                               {item.content || 'New item'}
                             </span>

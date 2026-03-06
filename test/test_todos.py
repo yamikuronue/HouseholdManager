@@ -85,6 +85,8 @@ def test_create_todo(client, user, household, member, auth_headers):
     assert data["household_id"] == household.id
     assert data["is_section_header"] is False
     assert data["is_checked"] is False
+    assert data["member_id"] == member.id
+    assert "member_color" in data
     assert "id" in data
 
 
