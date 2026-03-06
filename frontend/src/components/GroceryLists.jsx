@@ -304,7 +304,7 @@ export default function GroceryLists({ householdId, myMemberId }) {
                         ) : (
                           <>
                             <span
-                              className="grocery-list-item-dot"
+                              className="grocery-list-item-stripe"
                               style={{ backgroundColor: item.member_color || '#888' }}
                               title={item.member_display_name || ''}
                               aria-hidden

@@ -45,11 +45,12 @@
   margin-bottom: 2px;
 }
 
-.todo-item-dot {
+.todo-item-stripe {
   flex-shrink: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  min-height: 1.25rem;
 }
 
 .todo-item-drag-handle {

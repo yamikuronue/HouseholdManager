@@ -187,7 +187,7 @@ export default function TodoList({ householdId, households = [] }) {
                 ) : (
                   <>
                     <span
-                      className="todo-item-dot"
+                      className="todo-item-stripe"
                       style={{ backgroundColor: item.member_color || '#888' }}
                       title={item.member_display_name || ''}
                       aria-hidden
