@@ -13,6 +13,7 @@ from src.db.session import get_db
 from src.models.database import Household, Invitation, Member
 from src.models.database import User
 from src.models.schemas import (
+    DEFAULT_MEMBER_EVENT_COLOR,
     InvitationAccept,
     InvitationCreate,
     InvitationResponse,
@@ -210,7 +211,11 @@ def accept_invitation(
         db.commit()
         db.refresh(inv)
         return inv
-    member = Member(user_id=body.user_id, household_id=inv.household_id)
+    member = Member(
+        user_id=body.user_id,
+        household_id=inv.household_id,
+        event_color=DEFAULT_MEMBER_EVENT_COLOR,
+    )
     db.add(member)
     inv.status = "accepted"
     inv.accepted_at = datetime.utcnow()

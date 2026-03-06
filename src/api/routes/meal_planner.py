@@ -10,6 +10,7 @@ from src.api.routes.auth import get_current_user
 from src.db.session import get_db
 from src.models.database import Household, MealSlot, Member, PlannedMeal, User
 from src.models.schemas import (
+    DEFAULT_MEMBER_EVENT_COLOR,
     MealSlotCreate,
     MealSlotResponse,
     MealSlotUpdate,
@@ -157,7 +158,7 @@ def list_planned_meals(
             meal_slot_id=m.meal_slot_id,
             member_id=m.member_id,
             member_display_name=m.member.user.display_name or m.member.user.email,
-            member_color=member_colors.get(m.member_id) if m.member_id else None,
+            member_color=(member_colors.get(m.member_id) if m.member_id else None) or DEFAULT_MEMBER_EVENT_COLOR,
             description=m.description,
             created_at=m.created_at,
         )
@@ -199,7 +200,7 @@ def create_or_update_planned_meal(
             meal_slot_id=existing.meal_slot_id,
             member_id=existing.member_id,
             member_display_name=existing.member.user.display_name or existing.member.user.email,
-            member_color=existing.member.event_color,
+            member_color=existing.member.event_color or DEFAULT_MEMBER_EVENT_COLOR,
             description=existing.description,
             created_at=existing.created_at,
         )
@@ -222,7 +223,7 @@ def create_or_update_planned_meal(
         meal_slot_id=meal.meal_slot_id,
         member_id=meal.member_id,
         member_display_name=meal.member.user.display_name or meal.member.user.email,
-        member_color=meal.member.event_color,
+        member_color=meal.member.event_color or DEFAULT_MEMBER_EVENT_COLOR,
         description=meal.description,
         created_at=meal.created_at,
     )
@@ -255,7 +256,7 @@ def update_planned_meal(
         meal_slot_id=meal.meal_slot_id,
         member_id=meal.member_id,
         member_display_name=meal.member.user.display_name or meal.member.user.email,
-        member_color=meal.member.event_color,
+        member_color=meal.member.event_color or DEFAULT_MEMBER_EVENT_COLOR,
         description=meal.description,
         created_at=meal.created_at,
     )

@@ -7,7 +7,12 @@ from sqlalchemy.orm import Session, joinedload
 from src.api.routes.auth import get_current_user
 from src.db.session import get_db
 from src.models.database import Member, User
-from src.models.schemas import MemberCreate, MemberResponse, MemberUpdate
+from src.models.schemas import (
+    DEFAULT_MEMBER_EVENT_COLOR,
+    MemberCreate,
+    MemberResponse,
+    MemberUpdate,
+)
 
 router = APIRouter(prefix="/api/members", tags=["members"])
 
@@ -74,6 +79,7 @@ def create_member(
         user_id=body.user_id,
         household_id=body.household_id,
         role=role,
+        event_color=body.event_color or DEFAULT_MEMBER_EVENT_COLOR,
     )
     db.add(member)
     db.commit()

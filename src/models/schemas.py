@@ -6,7 +6,7 @@ Aligns with docs/DATA_MODEL.md: User, Household, Member, Calendar.
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 # ----- User -----
@@ -63,6 +63,10 @@ class HouseholdResponse(HouseholdBase):
 # ----- Member -----
 
 
+# Default when a member has not set a color (keeps API response consistent; frontend can override)
+DEFAULT_MEMBER_EVENT_COLOR = "#9ca3af"
+
+
 class MemberBase(BaseModel):
     role: Optional[str] = None
     event_color: Optional[str] = None
@@ -88,6 +92,10 @@ class MemberResponse(MemberBase):
     user: Optional[UserResponse] = None
     household: Optional[HouseholdResponse] = None
     model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("event_color", when_used="always")
+    def serialize_event_color(self, v: Optional[str]) -> str:
+        return v or DEFAULT_MEMBER_EVENT_COLOR
 
 
 # ----- Calendar -----
