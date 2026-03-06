@@ -20,6 +20,7 @@ def _user_household_ids(db: Session, user_id: int) -> list[int]:
 @router.get("", response_model=list[MemberResponse])
 def list_members(
     household_id: int | None = Query(None, description="Filter by household; omit to list members of all your households"),
+    _: str | None = Query(None, include_in_schema=False),  # cache-busting; ignored
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

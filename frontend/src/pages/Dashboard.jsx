@@ -44,16 +44,29 @@ export default function Dashboard() {
     return () => { document.title = 'Lionfish' }
   }, [])
 
-  useEffect(() => {
+  const fetchHouseholdMembers = useCallback((options = {}) => {
     const hid = dashboardHouseholdId ?? households[0]?.id
     if (!hid) {
       setHouseholdMembers([])
       return
     }
-    listMembers(hid)
+    listMembers(hid, options)
       .then(setHouseholdMembers)
       .catch(() => setHouseholdMembers([]))
   }, [dashboardHouseholdId, households])
+
+  useEffect(() => {
+    fetchHouseholdMembers({ cacheBust: true })
+  }, [fetchHouseholdMembers])
+
+  // Refetch members when user returns to this tab so colors stay in sync (e.g. housemate changed color in Settings)
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchHouseholdMembers({ cacheBust: true })
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [fetchHouseholdMembers])
 
   const selectedHousehold = households.find((h) => h.id === dashboardHouseholdId)
   const myMemberForHousehold = myMembers.find(

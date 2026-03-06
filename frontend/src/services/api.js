@@ -28,8 +28,11 @@ export const updateHousehold = (id, data) => api.patch(`/api/households/${id}`, 
 export const deleteHousehold = (id) => api.delete(`/api/households/${id}`)
 
 // Members
-export const listMembers = (householdId) =>
-  api.get('/api/members', { params: householdId != null ? { household_id: householdId } : {} }).then((r) => r.data)
+export const listMembers = (householdId, opts = {}) => {
+  const params = { ...(householdId != null ? { household_id: householdId } : {}) }
+  if (opts.cacheBust) params._ = Date.now()
+  return api.get('/api/members', { params }).then((r) => r.data)
+}
 export const createMember = (body) => api.post('/api/members', body).then((r) => r.data)
 export const getMember = (id) => api.get(`/api/members/${id}`).then((r) => r.data)
 export const updateMember = (id, data) => api.patch(`/api/members/${id}`, data).then((r) => r.data)
