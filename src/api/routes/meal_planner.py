@@ -3,6 +3,7 @@
 from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from src.api.routes.auth import get_current_user
@@ -140,10 +141,14 @@ def list_planned_meals(
         )
         .all()
     )
-    # Refresh each member so we have the latest event_color (e.g. after they change it in Settings)
-    for m in meals:
-        if m.member_id:
-            db.refresh(m.member)
+    # Load current event_color for all members (so viewer always sees up-to-date colors)
+    member_ids = {m.member_id for m in meals if m.member_id}
+    member_colors = {}
+    if member_ids:
+        rows = db.execute(
+            select(Member.id, Member.event_color).where(Member.id.in_(member_ids))
+        ).all()
+        member_colors = {r[0]: r[1] for r in rows}
     return [
         PlannedMealResponse(
             id=m.id,
@@ -152,7 +157,7 @@ def list_planned_meals(
             meal_slot_id=m.meal_slot_id,
             member_id=m.member_id,
             member_display_name=m.member.user.display_name or m.member.user.email,
-            member_color=m.member.event_color,
+            member_color=member_colors.get(m.member_id) if m.member_id else None,
             description=m.description,
             created_at=m.created_at,
         )
