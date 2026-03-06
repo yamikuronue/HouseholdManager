@@ -73,9 +73,9 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
     editingCell && editingCell.dateStr === dateStr && editingCell.slotId === slotId
 
   const startEditing = (dateStr, slotId) => {
-    if (!myMemberId) return
+    if (myMemberId == null) return
     const meal = getMealFor(dateStr, slotId)
-    if (meal && meal.member_id !== myMemberId) return
+    if (meal && Number(meal.member_id) !== Number(myMemberId)) return
     setEditingCell({ dateStr, slotId, value: meal?.description ?? '' })
     setTimeout(() => editingInputRef.current?.focus(), 0)
   }
@@ -91,7 +91,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
     setError('')
     try {
       if (trimmed === '') {
-        if (existing?.member_id === myMemberId) await deletePlannedMeal(existing.id)
+        if (existing && Number(existing.member_id) === Number(myMemberId)) await deletePlannedMeal(existing.id)
       } else {
         await createOrUpdatePlannedMeal({
           household_id: householdId,
@@ -118,7 +118,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
   }
 
   const handleDragStart = (e, meal, dateStr, slotId) => {
-    if (!meal || meal.member_id !== myMemberId) return
+    if (!meal || myMemberId == null || Number(meal.member_id) !== Number(myMemberId)) return
     e.dataTransfer.setData(DRAG_MEAL_TYPE, JSON.stringify({
       dateStr,
       slotId,
@@ -256,7 +256,10 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
                       draggingFrom?.dateStr === dateStr && draggingFrom?.slotId === slot.id
                     const isDropTarget =
                       dropTarget?.dateStr === dateStr && dropTarget?.slotId === slot.id
-                    const canDrag = meal && meal.member_id === myMemberId
+                    const canDrag =
+                      meal &&
+                      myMemberId != null &&
+                      Number(meal.member_id) === Number(myMemberId)
                     return (
                       <td
                         key={`${dateStr}-${slot.id}`}
@@ -292,8 +295,11 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
                                 onDragEnd={handleDragEnd}
                                 onClick={(e) => e.stopPropagation()}
                                 aria-label="Drag to move or swap meal"
+                                title="Drag to move or swap"
                               >
-                                ⋮⋮
+                                <span className="meal-planner-drag-handle-icon" aria-hidden>
+                                  ⋮⋮
+                                </span>
                               </span>
                             )}
                             {label}

@@ -56,7 +56,9 @@ export default function Dashboard() {
   }, [dashboardHouseholdId, households])
 
   const selectedHousehold = households.find((h) => h.id === dashboardHouseholdId)
-  const myMemberForHousehold = myMembers.find((m) => m.household_id === dashboardHouseholdId)
+  const myMemberForHousehold = myMembers.find(
+    (m) => m.household_id != null && dashboardHouseholdId != null && Number(m.household_id) === Number(dashboardHouseholdId)
+  )
   const mealPlannerWeeks = selectedHousehold?.meal_planner_weeks ?? 2
 
   const currentHouseholdName = selectedHousehold?.name ?? (households.length === 1 ? households[0]?.name : null)

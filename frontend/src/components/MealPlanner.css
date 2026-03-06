@@ -120,23 +120,34 @@
 .meal-planner-drag-handle {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.2rem;
-  margin: -0.1rem 0 -0.1rem -0.2rem;
-  color: #888;
+  justify-content: center;
+  min-width: 1.25em;
+  padding: 0.15rem 0.25rem;
+  margin: -0.1rem 0.15rem -0.1rem -0.2rem;
+  color: #555;
   cursor: grab;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   line-height: 1;
   border-radius: 3px;
   flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .meal-planner-drag-handle:hover {
-  color: #555;
-  background: rgba(0, 0, 0, 0.06);
+  color: #333;
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 .meal-planner-drag-handle:active {
   cursor: grabbing;
+}
+
+.meal-planner-drag-handle-icon {
+  display: inline-block;
+  font-weight: bold;
+  letter-spacing: -0.05em;
 }
 
 .meal-planner-cell-dragging {
