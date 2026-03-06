@@ -303,3 +303,176 @@ def test_delete_planned_meal_403_when_other_household(client, user, auth_headers
 
     r = client.delete(f"/api/planned-meals/{meal.id}", headers=auth_headers)
     assert r.status_code == 403
+
+
+# ----- Swap planned meals -----
+
+
+def test_swap_planned_meals(client, user, household, member, auth_headers, db):
+    """Swap two planned meals; their dates/slots are exchanged."""
+    slot_b = MealSlot(household_id=household.id, name="Breakfast", position=0)
+    slot_l = MealSlot(household_id=household.id, name="Lunch", position=1)
+    db.add_all([slot_b, slot_l])
+    db.commit()
+    db.refresh(slot_b)
+    db.refresh(slot_l)
+    d1 = date.today()
+    d2 = d1 + timedelta(days=1)
+    meal_a = PlannedMeal(
+        household_id=household.id,
+        meal_date=d1,
+        meal_slot_id=slot_b.id,
+        member_id=member.id,
+        description="Cereal",
+    )
+    meal_b = PlannedMeal(
+        household_id=household.id,
+        meal_date=d2,
+        meal_slot_id=slot_l.id,
+        member_id=member.id,
+        description="Sandwich",
+    )
+    db.add_all([meal_a, meal_b])
+    db.commit()
+    db.refresh(meal_a)
+    db.refresh(meal_b)
+    id_a, id_b = meal_a.id, meal_b.id
+
+    r = client.post(
+        "/api/planned-meals/swap",
+        json={"meal_id_a": id_a, "meal_id_b": id_b},
+        headers=auth_headers,
+    )
+    assert r.status_code == 204
+
+    start = d1
+    end = d2 + timedelta(days=1)
+    list_r = client.get(
+        "/api/planned-meals",
+        params={
+            "household_id": household.id,
+            "start_date": _date_str(start),
+            "end_date": _date_str(end),
+        },
+        headers=auth_headers,
+    )
+    assert list_r.status_code == 200
+    meals = list_r.json()
+    by_key = {(m["meal_date"], m["meal_slot_id"]): m for m in meals}
+    assert by_key[(_date_str(d1), slot_b.id)]["description"] == "Sandwich"
+    assert by_key[(_date_str(d2), slot_l.id)]["description"] == "Cereal"
+
+
+def test_swap_planned_meals_404(client, user, household, member, auth_headers, db):
+    slot = MealSlot(household_id=household.id, name="Lunch", position=0)
+    db.add(slot)
+    db.commit()
+    db.refresh(slot)
+    meal = PlannedMeal(
+        household_id=household.id,
+        meal_date=date.today(),
+        meal_slot_id=slot.id,
+        member_id=member.id,
+    )
+    db.add(meal)
+    db.commit()
+    db.refresh(meal)
+
+    r = client.post(
+        "/api/planned-meals/swap",
+        json={"meal_id_a": meal.id, "meal_id_b": 99999},
+        headers=auth_headers,
+    )
+    assert r.status_code == 404
+
+
+def test_swap_planned_meals_400_different_households(client, user, auth_headers, db):
+    h1 = Household(name="H1", meal_planner_weeks=2)
+    h2 = Household(name="H2", meal_planner_weeks=2)
+    db.add_all([h1, h2])
+    db.commit()
+    db.refresh(h1)
+    db.refresh(h2)
+    member = Member(user_id=user.id, household_id=h1.id)
+    db.add(member)
+    db.commit()
+    db.refresh(member)
+    s1 = MealSlot(household_id=h1.id, name="B", position=0)
+    s2 = MealSlot(household_id=h2.id, name="B", position=0)
+    db.add_all([s1, s2])
+    db.commit()
+    db.refresh(s1)
+    db.refresh(s2)
+    m1 = PlannedMeal(
+        household_id=h1.id,
+        meal_date=date.today(),
+        meal_slot_id=s1.id,
+        member_id=member.id,
+    )
+    other_user = User(google_sub="o", email="o@x.com")
+    db.add(other_user)
+    db.commit()
+    db.refresh(other_user)
+    other_member = Member(user_id=other_user.id, household_id=h2.id)
+    db.add(other_member)
+    db.commit()
+    db.refresh(other_member)
+    m2 = PlannedMeal(
+        household_id=h2.id,
+        meal_date=date.today(),
+        meal_slot_id=s2.id,
+        member_id=other_member.id,
+    )
+    db.add_all([m1, m2])
+    db.commit()
+    db.refresh(m1)
+    db.refresh(m2)
+
+    r = client.post(
+        "/api/planned-meals/swap",
+        json={"meal_id_a": m1.id, "meal_id_b": m2.id},
+        headers=auth_headers,
+    )
+    assert r.status_code == 400
+
+
+def test_swap_planned_meals_403_when_not_member(client, user, auth_headers, db):
+    other_h = Household(name="Other", meal_planner_weeks=2)
+    db.add(other_h)
+    db.commit()
+    db.refresh(other_h)
+    other_user = User(google_sub="o2", email="o2@x.com")
+    db.add(other_user)
+    db.commit()
+    db.refresh(other_user)
+    other_member = Member(user_id=other_user.id, household_id=other_h.id)
+    db.add(other_member)
+    db.commit()
+    db.refresh(other_member)
+    slot = MealSlot(household_id=other_h.id, name="Lunch", position=0)
+    db.add(slot)
+    db.commit()
+    db.refresh(slot)
+    m1 = PlannedMeal(
+        household_id=other_h.id,
+        meal_date=date.today(),
+        meal_slot_id=slot.id,
+        member_id=other_member.id,
+    )
+    m2 = PlannedMeal(
+        household_id=other_h.id,
+        meal_date=date.today() + timedelta(days=1),
+        meal_slot_id=slot.id,
+        member_id=other_member.id,
+    )
+    db.add_all([m1, m2])
+    db.commit()
+    db.refresh(m1)
+    db.refresh(m2)
+
+    r = client.post(
+        "/api/planned-meals/swap",
+        json={"meal_id_a": m1.id, "meal_id_b": m2.id},
+        headers=auth_headers,
+    )
+    assert r.status_code == 403

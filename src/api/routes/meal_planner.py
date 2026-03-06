@@ -14,6 +14,7 @@ from src.models.schemas import (
     MealSlotUpdate,
     PlannedMealCreate,
     PlannedMealResponse,
+    PlannedMealSwap,
 )
 
 router = APIRouter(prefix="/api", tags=["meal_planner"])
@@ -229,5 +230,52 @@ def delete_planned_meal(
         raise HTTPException(status_code=404, detail="Planned meal not found")
     _ensure_member(db, current_user.id, meal.household_id)
     db.delete(meal)
+    db.commit()
+    return None
+
+
+@router.post("/planned-meals/swap", status_code=204)
+def swap_planned_meals(
+    body: PlannedMealSwap,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Swap two planned meals' dates and slots. Both must belong to the same household."""
+    meal_a = db.get(PlannedMeal, body.meal_id_a)
+    meal_b = db.get(PlannedMeal, body.meal_id_b)
+    if not meal_a or not meal_b:
+        raise HTTPException(status_code=404, detail="One or both meals not found")
+    if meal_a.household_id != meal_b.household_id:
+        raise HTTPException(status_code=400, detail="Meals must be in the same household")
+    _ensure_member(db, current_user.id, meal_a.household_id)
+    household_id = meal_a.household_id
+    # Delete both then recreate in swapped positions to satisfy unique constraint
+    a_date, a_slot, a_member, a_desc = (
+        meal_a.meal_date,
+        meal_a.meal_slot_id,
+        meal_a.member_id,
+        meal_a.description,
+    )
+    b_date, b_slot, b_member, b_desc = (
+        meal_b.meal_date,
+        meal_b.meal_slot_id,
+        meal_b.member_id,
+        meal_b.description,
+    )
+    db.delete(meal_a)
+    db.delete(meal_b)
+    db.commit()
+    for meal_date, slot_id, member_id, description in [
+        (a_date, a_slot, b_member, b_desc),
+        (b_date, b_slot, a_member, a_desc),
+    ]:
+        m = PlannedMeal(
+            household_id=household_id,
+            meal_date=meal_date,
+            meal_slot_id=slot_id,
+            member_id=member_id,
+            description=description,
+        )
+        db.add(m)
     db.commit()
     return None

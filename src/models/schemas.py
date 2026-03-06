@@ -185,6 +185,11 @@ class PlannedMealCreate(BaseModel):
     description: Optional[str] = None
 
 
+class PlannedMealSwap(BaseModel):
+    meal_id_a: int
+    meal_id_b: int
+
+
 class PlannedMealResponse(BaseModel):
     id: int
     household_id: int

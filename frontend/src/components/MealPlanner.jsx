@@ -4,16 +4,20 @@ import {
   listPlannedMeals,
   createOrUpdatePlannedMeal,
   deletePlannedMeal,
+  swapPlannedMeals,
 } from '../services/api'
 import './MealPlanner.css'
 
 const ISO_DATE = (d) => d.toISOString().slice(0, 10)
+const DRAG_MEAL_TYPE = 'application/x-lionfish-meal'
 
 export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks = 2 }) {
   const [slots, setSlots] = useState([])
   const [meals, setMeals] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [draggingFrom, setDraggingFrom] = useState(null)
+  const [dropTarget, setDropTarget] = useState(null)
   const [startDate, setStartDate] = useState(() => {
     const d = new Date()
     const day = d.getDay()
@@ -113,6 +117,69 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
     }
   }
 
+  const handleDragStart = (e, meal, dateStr, slotId) => {
+    if (!meal || meal.member_id !== myMemberId) return
+    e.dataTransfer.setData(DRAG_MEAL_TYPE, JSON.stringify({
+      dateStr,
+      slotId,
+      mealId: meal.id,
+      description: meal.description,
+      member_id: meal.member_id,
+    }))
+    e.dataTransfer.effectAllowed = 'move'
+    setDraggingFrom({ dateStr, slotId })
+  }
+
+  const handleDragEnd = () => {
+    setDraggingFrom(null)
+    setDropTarget(null)
+  }
+
+  const handleDragOver = (e, dateStr, slotId) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDropTarget({ dateStr, slotId })
+  }
+
+  const handleDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) setDropTarget(null)
+  }
+
+  const handleDrop = async (e, targetDateStr, targetSlotId) => {
+    e.preventDefault()
+    setDropTarget(null)
+    setDraggingFrom(null)
+    const raw = e.dataTransfer.getData(DRAG_MEAL_TYPE)
+    if (!raw) return
+    let payload
+    try {
+      payload = JSON.parse(raw)
+    } catch {
+      return
+    }
+    const { dateStr: sourceDateStr, slotId: sourceSlotId, mealId: sourceMealId, description, member_id } = payload
+    if (sourceDateStr === targetDateStr && sourceSlotId === targetSlotId) return
+    const targetMeal = getMealFor(targetDateStr, targetSlotId)
+    setError('')
+    try {
+      if (targetMeal) {
+        await swapPlannedMeals(sourceMealId, targetMeal.id)
+      } else {
+        await createOrUpdatePlannedMeal({
+          household_id: householdId,
+          meal_date: targetDateStr,
+          meal_slot_id: targetSlotId,
+          member_id,
+          description: description ?? '',
+        })
+        await deletePlannedMeal(sourceMealId)
+      }
+      if (loadRef.current) await loadRef.current()
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message)
+    }
+  }
+
   if (!householdId) {
     return (
       <div className="meal-planner meal-planner-empty">
@@ -185,11 +252,19 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
                     const meal = getMealFor(dateStr, slot.id)
                     const editing = isEditing(dateStr, slot.id)
                     const label = meal ? (meal.description || '—') : null
+                    const isDraggingFrom =
+                      draggingFrom?.dateStr === dateStr && draggingFrom?.slotId === slot.id
+                    const isDropTarget =
+                      dropTarget?.dateStr === dateStr && dropTarget?.slotId === slot.id
+                    const canDrag = meal && meal.member_id === myMemberId
                     return (
                       <td
                         key={`${dateStr}-${slot.id}`}
-                        className="meal-planner-cell meal-planner-cell-meal"
+                        className={`meal-planner-cell meal-planner-cell-meal${isDraggingFrom ? ' meal-planner-cell-dragging' : ''}${isDropTarget ? ' meal-planner-cell-drop-target' : ''}`}
                         onClick={() => !editing && startEditing(dateStr, slot.id)}
+                        onDragOver={(e) => handleDragOver(e, dateStr, slot.id)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, dateStr, slot.id)}
                       >
                         {editing ? (
                           <input
@@ -209,6 +284,18 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
                             style={{ borderLeftColor: meal.member_color || '#888' }}
                             title={meal.member_display_name ? `${label} (${meal.member_display_name})` : label}
                           >
+                            {canDrag && (
+                              <span
+                                className="meal-planner-drag-handle"
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, meal, dateStr, slot.id)}
+                                onDragEnd={handleDragEnd}
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label="Drag to move or swap meal"
+                              >
+                                ⋮⋮
+                              </span>
+                            )}
                             {label}
                           </span>
                         ) : (
