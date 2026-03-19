@@ -43,7 +43,10 @@ def _google_auth_url(state: str, code_challenge: str) -> str:
         "client_id": settings.GOOGLE_CLIENT_ID,
         "redirect_uri": settings.GOOGLE_REDIRECT_URI,
         "response_type": "code",
-        "scope": "openid email profile https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events",
+        # Scope list must match the OAuth consent screen submission exactly.
+        # This app uses OAuth access tokens + Google APIs; it does not use OIDC id_token,
+        # so we do not request `openid`.
+        "scope": "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events",
         "access_type": "offline",
         "prompt": "consent",
         "state": state,

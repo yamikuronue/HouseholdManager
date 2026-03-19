@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 
 from src.config import settings
 from src.api.routes import auth, calendars, events, grocery_lists, households, invitations, meal_planner, members, todos
@@ -114,6 +114,18 @@ app.include_router(auth.router)
 async def health():
     """Health check endpoint."""
     return {"status": "healthy"}
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt():
+    """Allow crawlers to index the site; disallow API and auth paths."""
+    return """User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /docs
+Disallow: /redoc
+Disallow: /openapi.json
+"""
 
 
 # Serve built frontend when static/ has index.html (single-component deploy)
