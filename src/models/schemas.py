@@ -275,6 +275,7 @@ class GroceryListItemCreate(BaseModel):
     grocery_list_id: int
     content: str
     is_section_header: bool = False
+    is_checked: bool = False
     position: Optional[int] = None
     member_id: Optional[int] = None  # set by API from current user if not provided
 
@@ -282,6 +283,7 @@ class GroceryListItemCreate(BaseModel):
 class GroceryListItemUpdate(BaseModel):
     content: Optional[str] = None
     is_section_header: Optional[bool] = None
+    is_checked: Optional[bool] = None
     position: Optional[int] = None
 
 
@@ -290,6 +292,7 @@ class GroceryListItemResponse(BaseModel):
     grocery_list_id: int
     content: str
     is_section_header: bool
+    is_checked: bool
     position: int
     member_id: Optional[int] = None
     member_display_name: Optional[str] = None

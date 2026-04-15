@@ -131,6 +131,7 @@ def _item_to_response(db: Session, item: GroceryListItem) -> GroceryListItemResp
         grocery_list_id=item.grocery_list_id,
         content=item.content,
         is_section_header=item.is_section_header,
+        is_checked=bool(item.is_checked),
         position=item.position,
         member_id=item.member_id,
         member_display_name=member_name,
@@ -181,6 +182,7 @@ def create_grocery_list_item(
         grocery_list_id=body.grocery_list_id,
         content=(body.content or "").strip() or "New item",
         is_section_header=body.is_section_header,
+        is_checked=body.is_checked,
         position=position,
         member_id=member_id,
     )
@@ -206,6 +208,8 @@ def update_grocery_list_item(
         item.content = (body.content or "").strip() or item.content
     if body.is_section_header is not None:
         item.is_section_header = body.is_section_header
+    if body.is_checked is not None:
+        item.is_checked = body.is_checked
     if body.position is not None:
         item.position = body.position
     db.commit()

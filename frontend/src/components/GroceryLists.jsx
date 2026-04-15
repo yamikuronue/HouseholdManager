@@ -144,6 +144,33 @@ export default function GroceryLists({ householdId, myMemberId }) {
     }
   }
 
+  const handleToggleItem = async (item) => {
+    if (item.is_section_header) return
+    setError('')
+    try {
+      await updateGroceryListItem(item.id, { is_checked: !item.is_checked })
+      setItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, is_checked: !item.is_checked } : i))
+      )
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
+  const handleDeleteCrossedOut = async () => {
+    const toRemove = items.filter((i) => !i.is_section_header && i.is_checked)
+    if (toRemove.length === 0) return
+    if (!window.confirm(`Remove ${toRemove.length} crossed-out item(s) from this list?`)) return
+    setError('')
+    try {
+      await Promise.all(toRemove.map((i) => deleteGroceryListItem(i.id)))
+      setItems((prev) => prev.filter((i) => i.is_section_header || !i.is_checked))
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+      loadItems()
+    }
+  }
+
   const handleDragStart = (e, index) => {
     setDraggedIndex(index)
     e.dataTransfer.effectAllowed = 'move'
@@ -191,6 +218,7 @@ export default function GroceryLists({ householdId, myMemberId }) {
   }
 
   const canDeleteList = lists.length > 1
+  const hasCrossedOutItems = items.some((i) => !i.is_section_header && i.is_checked)
 
   if (!householdId) {
     return (
@@ -272,7 +300,7 @@ export default function GroceryLists({ householdId, myMemberId }) {
                     {items.map((item, index) => (
                       <li
                         key={item.id}
-                        className={`grocery-list-item ${item.is_section_header ? 'grocery-list-item-section' : ''} ${draggedIndex === index ? 'grocery-list-item-dragging' : ''} ${dropTargetIndex === index ? 'grocery-list-item-drop-target' : ''}`}
+                        className={`grocery-list-item ${item.is_section_header ? 'grocery-list-item-section' : ''} ${!item.is_section_header && item.is_checked ? 'grocery-list-item-checked' : ''} ${draggedIndex === index ? 'grocery-list-item-dragging' : ''} ${dropTargetIndex === index ? 'grocery-list-item-drop-target' : ''}`}
                         onDragOver={(e) => handleDragOver(e, index)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, index)}
@@ -309,7 +337,26 @@ export default function GroceryLists({ householdId, myMemberId }) {
                               title={item.member_display_name || ''}
                               aria-hidden
                             />
-                            <span className="grocery-list-item-label">
+                            <button
+                              type="button"
+                              className="grocery-list-item-check"
+                              onClick={() => handleToggleItem(item)}
+                              aria-label={item.is_checked ? 'Mark not done' : 'Cross out'}
+                            >
+                              {item.is_checked ? '✓' : ''}
+                            </button>
+                            <span
+                              className="grocery-list-item-label"
+                              onClick={() => handleToggleItem(item)}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  handleToggleItem(item)
+                                }
+                              }}
+                            >
                               {item.content || 'New item'}
                             </span>
                             <button
@@ -325,6 +372,17 @@ export default function GroceryLists({ householdId, myMemberId }) {
                       </li>
                     ))}
                   </ul>
+                  {hasCrossedOutItems && (
+                    <div className="grocery-lists-clear-checked-wrap">
+                      <button
+                        type="button"
+                        className="grocery-lists-clear-checked"
+                        onClick={handleDeleteCrossedOut}
+                      >
+                        Remove crossed-out items
+                      </button>
+                    </div>
+                  )}
                   {adding ? (
                     <div className="grocery-lists-add-row">
                       <input

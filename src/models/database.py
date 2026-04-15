@@ -251,6 +251,7 @@ class GroceryListItem(Base):
     )
     content = Column(String(500), nullable=False)
     is_section_header = Column(Boolean, default=False)
+    is_checked = Column(Boolean, default=False)
     position = Column(Integer, default=0)
     member_id = Column(
         Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=True
