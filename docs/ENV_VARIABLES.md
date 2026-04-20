@@ -19,9 +19,9 @@ These should be updated with your actual deployment URLs:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `GOOGLE_REDIRECT_URI` | OAuth callback URL | `https://your-backend.ondigitalocean.app/api/auth/callback` |
-| `FRONTEND_URL` | Frontend URL for CORS | `https://your-frontend.ondigitalocean.app` |
-| `VITE_API_URL` | Backend API URL (frontend) | `https://your-backend.ondigitalocean.app` |
+| `GOOGLE_REDIRECT_URI` | OAuth callback URL | `https://lionfish.cloud/api/auth/callback` |
+| `FRONTEND_URL` | Frontend URL for CORS | `https://lionfish.cloud` |
+| `VITE_API_URL` | Backend API URL (frontend build; empty = same-origin) | `https://lionfish.cloud` or leave unset when API and SPA share one URL |
 
 ## Optional Variables
 
@@ -32,6 +32,7 @@ These should be updated with your actual deployment URLs:
 | `ENVIRONMENT` | Environment indicator | `production` |
 | `ENCRYPTION_KEY` | Fernet key for encrypting refresh/access tokens at rest (recommended in production) | Not set (tokens stored plain) |
 | `ENCRYPTION_KEY_PREVIOUS` | Old Fernet key when rotating; used only to decrypt existing tokens | Not set |
+| `ANDROID_APP_PACKAGE` | Android app id for OAuth `intent://` return after Custom Tab sign-in (must match the Android app’s `applicationId`) | `cloud.lionfish.app` |
 
 To generate a Fernet key: `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Store as an encrypted secret in production.
 

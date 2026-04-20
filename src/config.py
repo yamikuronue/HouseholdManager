@@ -72,6 +72,10 @@ class Settings:
         self.MAIL_FROM: str = os.getenv("MAIL_FROM", "noreply@lionfish.cloud")
         self.MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME", "Lionfish")
 
+        # Android WebView wrapper: OAuth completes in Custom Tabs; callback uses an intent://
+        # redirect so the app can open the WebView on /login/callback?code=... (session cookie in WebView).
+        self.ANDROID_APP_PACKAGE: Optional[str] = os.getenv("ANDROID_APP_PACKAGE", "cloud.lionfish.app")
+
     @property
     def frontend_base_url(self) -> str:
         """Base URL for post-OAuth redirect. Prefer deriving from GOOGLE_REDIRECT_URI in production."""
@@ -100,9 +104,10 @@ class Settings:
     
     def is_production(self) -> bool:
         """Check if running in production environment."""
+        urls = f"{self.FRONTEND_URL or ''} {self.GOOGLE_REDIRECT_URI or ''}"
         return os.getenv("ENVIRONMENT", "").lower() == "production" or \
-               "ondigitalocean.app" in self.FRONTEND_URL or \
-               "ondigitalocean.app" in self.GOOGLE_REDIRECT_URI
+               "ondigitalocean.app" in urls or \
+               "lionfish.cloud" in urls
 
 
 settings = Settings()

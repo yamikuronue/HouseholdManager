@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Lionfish</string>
+    <string name="error_loading">Couldn’t load Lionfish. Check your connection and try again.</string>
+</resources>

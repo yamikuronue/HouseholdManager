@@ -9,7 +9,7 @@ A household manager tool custom built for my household. Aggregates multiple Goog
 - 🐳 Fully containerized application
 - 🔐 Secure OAuth2 authentication
 
-**Live:** [https://lionfish-app-uhfes.ondigitalocean.app/](https://lionfish-app-uhfes.ondigitalocean.app/) · [API docs](https://lionfish-app-uhfes.ondigitalocean.app/docs) · See [docs/DEPLOYMENT_URLS.md](docs/DEPLOYMENT_URLS.md) for OAuth redirect URI.
+**Live:** [https://lionfish.cloud/](https://lionfish.cloud/) · [API docs](https://lionfish.cloud/docs) · See [docs/DEPLOYMENT_URLS.md](docs/DEPLOYMENT_URLS.md) for OAuth redirect URI. **Android WebView MVP:** [android/README.md](android/README.md) and [docs/ANDROID_WEBVIEW.md](docs/ANDROID_WEBVIEW.md).
 
 ## Architecture
 

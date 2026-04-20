@@ -71,6 +71,10 @@ services:
         scope: RUN_TIME
         value: https://lionfish.cloud
 
+      - key: ANDROID_APP_PACKAGE
+        scope: RUN_TIME
+        value: cloud.lionfish.app
+
       - key: ENVIRONMENT
         scope: RUN_TIME
         value: production

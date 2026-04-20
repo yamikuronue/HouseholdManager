@@ -13,7 +13,19 @@ const api = axios.create({
 
 // Auth (session via HttpOnly cookie; exchange one-time code after OAuth redirect)
 export const getAuthMe = () => api.get('/api/auth/me').then((r) => r.data)
-export const getGoogleAuthUrl = () => `${API_BASE_URL}/api/auth/google`
+
+/** Android WebView shell sets this User-Agent suffix; backend then uses intent:// return to open the app on /login/callback. */
+const isLionfishAndroidWebView =
+  typeof navigator !== 'undefined' && /LionfishWebView\//i.test(navigator.userAgent)
+
+export const getGoogleAuthUrl = () => {
+  const base = `${API_BASE_URL}/api/auth/google`
+  if (isLionfishAndroidWebView) {
+    const q = new URLSearchParams({ return_app: '1' })
+    return `${base}?${q.toString()}`
+  }
+  return base
+}
 export const exchangeCodeForSession = (code) =>
   api.post('/api/auth/exchange', { code }).then((r) => r.data)
 export const logoutSession = () => api.post('/api/auth/logout')

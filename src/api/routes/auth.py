@@ -5,10 +5,10 @@ import hashlib
 import secrets
 import time
 from datetime import datetime, timedelta
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 import httpx
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse, Response
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -27,6 +27,7 @@ COOKIE_NAME = "token"
 COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days
 OAUTH_STATE_COOKIE = "oauth_state"
 OAUTH_VERIFIER_COOKIE = "oauth_verifier"
+OAUTH_RETURN_APP_COOKIE = "oauth_return_app"
 CODE_TTL_SECONDS = 120
 
 # One-time exchange codes: code -> (user_id, email, expiry_ts)
@@ -54,6 +55,23 @@ def _google_auth_url(state: str, code_challenge: str) -> str:
         "code_challenge_method": "S256",
     }
     return f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+
+
+def _android_oauth_intent_url(exchange_code: str) -> str | None:
+    """Chrome intent: opens the installed app on https://host/login/callback?code=... or falls back to HTTPS."""
+    pkg = settings.ANDROID_APP_PACKAGE
+    if not pkg or not pkg.strip():
+        return None
+    base = settings.frontend_base_url.rstrip("/")
+    host_part = base.removeprefix("https://").removeprefix("http://").split("/")[0]
+    qs = urlencode({"code": exchange_code})
+    https_url = f"{base}/login/callback?{qs}"
+    # See https://developer.chrome.com/docs/android/intents
+    return (
+        f"intent://{host_part}/login/callback?{qs}"
+        f"#Intent;scheme=https;package={pkg};"
+        f"S.browser_fallback_url={quote(https_url, safe='')};end"
+    )
 
 
 def create_access_token(user_id: int, email: str) -> str:
@@ -143,7 +161,13 @@ def get_current_user(
 
 
 @router.get("/google")
-async def initiate_google_auth(response: Response):
+async def initiate_google_auth(
+    response: Response,
+    return_app: str | None = Query(
+        None,
+        description="If 1/true, after OAuth redirect with an Android intent:// URL (see ANDROID_APP_PACKAGE).",
+    ),
+):
     """Redirect to Google OAuth with state and PKCE. Sets oauth_state and oauth_verifier cookies."""
     if not settings.GOOGLE_CLIENT_ID:
         raise HTTPException(
@@ -158,6 +182,9 @@ async def initiate_google_auth(response: Response):
     response = RedirectResponse(url=_google_auth_url(state, code_challenge))
     response.set_cookie(OAUTH_STATE_COOKIE, state, max_age=600, httponly=True, samesite="lax", secure=secure)
     response.set_cookie(OAUTH_VERIFIER_COOKIE, code_verifier, max_age=600, httponly=True, samesite="lax", secure=secure)
+    want_app = return_app is not None and str(return_app).lower() in ("1", "true", "yes")
+    if want_app:
+        response.set_cookie(OAUTH_RETURN_APP_COOKIE, "1", max_age=600, httponly=True, samesite="lax", secure=secure)
     return response
 
 
@@ -244,9 +271,16 @@ async def oauth_callback(
     exchange_code = secrets.token_urlsafe(32)
     _exchange_codes[exchange_code] = (user.id, user.email, time.time() + CODE_TTL_SECONDS)
     frontend_callback = f"{settings.frontend_base_url}/login/callback"
-    redirect = RedirectResponse(url=f"{frontend_callback}?code={exchange_code}")
+    target = f"{frontend_callback}?code={exchange_code}"
+    return_app = request.cookies.get(OAUTH_RETURN_APP_COOKIE) == "1"
+    intent_url = _android_oauth_intent_url(exchange_code) if return_app else None
+    if return_app and intent_url:
+        redirect = RedirectResponse(url=intent_url)
+    else:
+        redirect = RedirectResponse(url=target)
     redirect.delete_cookie(OAUTH_STATE_COOKIE)
     redirect.delete_cookie(OAUTH_VERIFIER_COOKIE)
+    redirect.delete_cookie(OAUTH_RETURN_APP_COOKIE)
     return redirect
 
 

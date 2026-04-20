@@ -17,6 +17,22 @@ from src.db.session import init_db, run_migrations
 
 logger = logging.getLogger(__name__)
 
+
+def _cors_allow_origins() -> list[str]:
+    """Origins allowed for credentialed XHR (session cookie). Includes canonical production host."""
+    origins: set[str] = set()
+    for o in (
+        settings.FRONTEND_URL,
+        settings.frontend_base_url,
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "https://lionfish.cloud",
+    ):
+        if o:
+            origins.add(o.rstrip("/"))
+    return sorted(origins)
+
+
 # Rate limit /api/auth only: in-memory IP -> list of request timestamps
 _AUTH_RATE_LIMIT_WINDOW = 60  # seconds
 _AUTH_RATE_LIMIT_MAX = 20     # requests per window per IP
@@ -92,7 +108,7 @@ async def auth_rate_limit(request, call_next):
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:3000", "http://localhost:8080"],
+    allow_origins=_cors_allow_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
