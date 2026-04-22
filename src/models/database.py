@@ -31,7 +31,7 @@ class User(Base):
     google_sub = Column(String(255), unique=True, nullable=False, index=True)
     email = Column(String(255), nullable=False)
     display_name = Column(String(255), nullable=True)
-    avatar_url = Column(String(512), nullable=True)
+    avatar_url = Column(Text, nullable=True)  # Google profile URLs can be very long
     refresh_token = Column(Text, nullable=True)  # Store encrypted in production
     access_token = Column(Text, nullable=True)
     token_expiry = Column(DateTime, nullable=True)
