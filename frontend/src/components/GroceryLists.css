@@ -222,6 +222,11 @@
   border-color: #bbb;
 }
 
+.grocery-lists-clear-checked:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .grocery-list-item-delete {
   flex-shrink: 0;
   padding: 0.2rem;

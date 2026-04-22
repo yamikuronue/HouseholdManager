@@ -21,6 +21,7 @@ export default function GroceryLists({ householdId, myMemberId }) {
   const [error, setError] = useState('')
   const [draggedIndex, setDraggedIndex] = useState(null)
   const [dropTargetIndex, setDropTargetIndex] = useState(null)
+  const [clearingChecked, setClearingChecked] = useState(false)
 
   const loadLists = useCallback(async () => {
     if (!householdId) {
@@ -159,15 +160,20 @@ export default function GroceryLists({ householdId, myMemberId }) {
 
   const handleDeleteCrossedOut = async () => {
     const toRemove = items.filter((i) => !i.is_section_header && i.is_checked)
-    if (toRemove.length === 0) return
-    if (!window.confirm(`Remove ${toRemove.length} crossed-out item(s) from this list?`)) return
+    if (toRemove.length === 0) {
+      setError('No crossed-out items to remove.')
+      return
+    }
     setError('')
+    setClearingChecked(true)
     try {
       await Promise.all(toRemove.map((i) => deleteGroceryListItem(i.id)))
       setItems((prev) => prev.filter((i) => i.is_section_header || !i.is_checked))
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
       loadItems()
+    } finally {
+      setClearingChecked(false)
     }
   }
 
@@ -378,8 +384,9 @@ export default function GroceryLists({ householdId, myMemberId }) {
                         type="button"
                         className="grocery-lists-clear-checked"
                         onClick={handleDeleteCrossedOut}
+                        disabled={clearingChecked}
                       >
-                        Remove crossed-out items
+                        {clearingChecked ? 'Deleting…' : `Delete crossed-out items (${items.filter((i) => !i.is_section_header && i.is_checked).length})`}
                       </button>
                     </div>
                   )}
