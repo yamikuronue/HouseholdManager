@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { exchangeCodeForSession } from '../services/api'
+import { exchangeCodeForSession, listMyPendingInvitations } from '../services/api'
 import Footer from '../components/Footer'
 import './LoginCallback.css'
 
@@ -11,6 +11,7 @@ export default function LoginCallback() {
   const navigate = useNavigate()
   const [error, setError] = useState(null)
   const codeApplied = useRef(false)
+  const redirectedAfterLogin = useRef(false)
 
   useEffect(() => {
     document.title = 'Signing in - Lionfish'
@@ -35,9 +36,21 @@ export default function LoginCallback() {
 
   // Navigate once we have the user.
   useEffect(() => {
-    if (user && codeApplied.current) {
+    const routeAfterLogin = async () => {
+      if (!user || !codeApplied.current || redirectedAfterLogin.current) return
+      redirectedAfterLogin.current = true
+      try {
+        const pending = await listMyPendingInvitations()
+        if (Array.isArray(pending) && pending.length > 0) {
+          navigate('/settings?pending_invites=1', { replace: true })
+          return
+        }
+      } catch {
+        // If this check fails, fall back to dashboard.
+      }
       navigate('/dashboard', { replace: true })
     }
+    routeAfterLogin()
   }, [user, navigate])
 
   if (error) {

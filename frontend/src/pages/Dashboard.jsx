@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { listHouseholds, listMembers } from '../services/api'
+import {
+  listHouseholds,
+  listMembers,
+  listMyPendingInvitations,
+  acceptInvitation,
+  declineMyPendingInvitation,
+} from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import CalendarWidget from '../components/CalendarWidget'
 import TodoList from '../components/TodoList'
@@ -12,20 +18,25 @@ export default function Dashboard() {
   const [households, setHouseholds] = useState([])
   const [myMembers, setMyMembers] = useState([])
   const [householdMembers, setHouseholdMembers] = useState([])
+  const [myPendingInvites, setMyPendingInvites] = useState([])
+  const [inviteActionLoadingId, setInviteActionLoadingId] = useState(null)
+  const [inviteError, setInviteError] = useState('')
   const [dashboardHouseholdId, setDashboardHouseholdId] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
     if (!user) return
     try {
-      const [h, members] = await Promise.all([
+      const [h, members, pendingInvites] = await Promise.all([
         listHouseholds(),
         listMembers(),
+        listMyPendingInvitations(),
       ])
       const mine = members.filter((m) => m.user_id === user.id)
       const myHouseholdIds = new Set(mine.map((m) => m.household_id))
       setHouseholds(h.filter((hh) => myHouseholdIds.has(hh.id)))
       setMyMembers(mine)
+      setMyPendingInvites(pendingInvites)
       const mineHouseholds = h.filter((hh) => myHouseholdIds.has(hh.id))
       if (mineHouseholds.length > 0 && !dashboardHouseholdId) setDashboardHouseholdId(mineHouseholds[0].id)
     } catch (e) {
@@ -34,6 +45,34 @@ export default function Dashboard() {
       setLoading(false)
     }
   }, [user])
+
+  const handleAcceptInvite = async (invite) => {
+    if (!user) return
+    setInviteError('')
+    setInviteActionLoadingId(invite.id)
+    try {
+      await acceptInvitation({ token: invite.token, user_id: user.id })
+      await load()
+      fetchHouseholdMembers({ cacheBust: true })
+    } catch (e) {
+      setInviteError(e.response?.data?.detail || e.message)
+    } finally {
+      setInviteActionLoadingId(null)
+    }
+  }
+
+  const handleDeleteInvite = async (invite) => {
+    setInviteError('')
+    setInviteActionLoadingId(invite.id)
+    try {
+      await declineMyPendingInvitation(invite.id)
+      setMyPendingInvites((prev) => prev.filter((i) => i.id !== invite.id))
+    } catch (e) {
+      setInviteError(e.response?.data?.detail || e.message)
+    } finally {
+      setInviteActionLoadingId(null)
+    }
+  }
 
   useEffect(() => {
     load()
@@ -138,6 +177,40 @@ export default function Dashboard() {
           )}
         </section>
       </div>
+      {!loading && myPendingInvites.length > 0 && (
+        <section className="dashboard-section">
+          <h2>Pending household invitations</h2>
+          {inviteError && <p className="dashboard-error-inline">{inviteError}</p>}
+          <ul className="dashboard-list">
+            {myPendingInvites.map((invite) => (
+              <li key={invite.id} className="dashboard-list-item-with-action">
+                <span>
+                  {invite.household_name || `Household #${invite.household_id}`}
+                  {invite.invited_by_display_name ? ` — invited by ${invite.invited_by_display_name}` : ''}
+                </span>
+                <span className="dashboard-list-actions">
+                  <button
+                    type="button"
+                    className="dashboard-btn-secondary"
+                    onClick={() => handleAcceptInvite(invite)}
+                    disabled={inviteActionLoadingId === invite.id}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    className="dashboard-btn-danger"
+                    onClick={() => handleDeleteInvite(invite)}
+                    disabled={inviteActionLoadingId === invite.id}
+                  >
+                    Delete
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {!loading && (
         <>
           <section className="dashboard-section dashboard-grocery-lists">

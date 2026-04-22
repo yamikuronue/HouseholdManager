@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   listHouseholds,
   createHousehold,
   createMember,
   listMembers,
   listInvitations,
+  listMyPendingInvitations,
   createInvitation,
   resendInvitation,
   deleteInvitation,
+  acceptInvitation,
+  declineMyPendingInvitation,
   deleteMember,
   deleteHousehold,
   createCalendar,
@@ -26,8 +30,10 @@ import './Dashboard.css'
 
 export default function Settings() {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [households, setHouseholds] = useState([])
   const [invitations, setInvitations] = useState([])
+  const [myPendingInvites, setMyPendingInvites] = useState([])
   const [loading, setLoading] = useState(true)
   const [newHouseholdName, setNewHouseholdName] = useState('')
   const [selectedHouseholdId, setSelectedHouseholdId] = useState('')
@@ -42,6 +48,7 @@ export default function Settings() {
   const [myCalendars, setMyCalendars] = useState([])
   const [mealSlotsByHousehold, setMealSlotsByHousehold] = useState({})
   const [newMealSlotName, setNewMealSlotName] = useState('')
+  const [showPendingInviteBanner, setShowPendingInviteBanner] = useState(false)
 
   const DEFAULT_PASTEL_COLORS = [
     '#FFB3BA', '#BAFFC9', '#BAE1FF', '#FFFFBA',
@@ -51,9 +58,10 @@ export default function Settings() {
   const load = async () => {
     if (!user) return
     try {
-      const [h, inv, allMembers] = await Promise.all([
+      const [h, inv, myPending, allMembers] = await Promise.all([
         listHouseholds(),
         listInvitations(),
+        listMyPendingInvitations(),
         listMembers(),
       ])
       const mine = allMembers.filter((m) => m.user_id === user.id)
@@ -62,6 +70,7 @@ export default function Settings() {
       setHouseholds(mineHouseholds)
       setMyMembers(mine)
       setInvitations(inv)
+      setMyPendingInvites(myPending)
       const membersPerH = {}
       await Promise.all(
         mineHouseholds.map(async (hh) => {
@@ -105,6 +114,12 @@ export default function Settings() {
     document.title = 'Settings - Lionfish'
     return () => { document.title = 'Lionfish' }
   }, [])
+
+  useEffect(() => {
+    if (searchParams.get('pending_invites') === '1') {
+      setShowPendingInviteBanner(true)
+    }
+  }, [searchParams])
 
   const loadGoogleCalendars = async () => {
     if (!user) return
@@ -202,6 +217,32 @@ export default function Settings() {
     try {
       await deleteInvitation(invitationId)
       setSuccess('Invitation removed.')
+      load()
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
+  const handleAcceptMyInvite = async (invite) => {
+    if (!user) return
+    setError('')
+    setSuccess('')
+    try {
+      await acceptInvitation({ token: invite.token, user_id: user.id })
+      setSuccess(`Joined ${invite.household_name || 'household'}.`)
+      load()
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message)
+    }
+  }
+
+  const handleDeclineMyInvite = async (invite) => {
+    if (!window.confirm(`Decline invitation to ${invite.household_name || 'this household'}?`)) return
+    setError('')
+    setSuccess('')
+    try {
+      await declineMyPendingInvitation(invite.id)
+      setSuccess('Invitation deleted.')
       load()
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
@@ -373,6 +414,23 @@ export default function Settings() {
   return (
     <div className="dashboard settings-page">
       <h1>Settings</h1>
+      {showPendingInviteBanner && (
+        <div className="dashboard-message dashboard-success settings-pending-invites-banner" role="status">
+          <span>You have pending household invitations to review below.</span>
+          <button
+            type="button"
+            className="dashboard-btn-secondary"
+            onClick={() => {
+              setShowPendingInviteBanner(false)
+              const next = new URLSearchParams(searchParams)
+              next.delete('pending_invites')
+              setSearchParams(next, { replace: true })
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       {error && (
         <div className="dashboard-message dashboard-error" role="alert">
           {error}
@@ -511,7 +569,41 @@ export default function Settings() {
       </section>
 
       <section className="dashboard-section">
-        <h2>Pending invitations</h2>
+        <h2>Invitations for you</h2>
+        {myPendingInvites.length === 0 ? (
+          <p className="dashboard-muted">No pending invitations addressed to your login email.</p>
+        ) : (
+          <ul className="dashboard-list">
+            {myPendingInvites.map((inv) => (
+              <li key={inv.id} className="dashboard-list-item-with-action">
+                <span>
+                  {inv.household_name || `Household #${inv.household_id}`}
+                  {inv.invited_by_display_name ? ` — invited by ${inv.invited_by_display_name}` : ''}
+                </span>
+                <span className="dashboard-list-actions">
+                  <button
+                    type="button"
+                    className="dashboard-btn-secondary"
+                    onClick={() => handleAcceptMyInvite(inv)}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    className="dashboard-btn-danger"
+                    onClick={() => handleDeclineMyInvite(inv)}
+                  >
+                    Delete
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="dashboard-section">
+        <h2>Pending invitations (sent by your households)</h2>
         {(() => {
           const hid = selectedHouseholdId ? parseInt(selectedHouseholdId, 10) : null
           const pending = invitations.filter(

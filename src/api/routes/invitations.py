@@ -35,6 +35,26 @@ def _user_household_ids(db: Session, user_id: int) -> list[int]:
     return [r[0] for r in rows]
 
 
+def _invitation_to_response(inv: Invitation) -> InvitationResponse:
+    inviter_name = None
+    if inv.invited_by and inv.invited_by.user:
+        inviter_name = inv.invited_by.user.display_name or inv.invited_by.user.email
+    return InvitationResponse(
+        id=inv.id,
+        household_id=inv.household_id,
+        household_name=inv.household.name if inv.household else None,
+        email=inv.email,
+        invited_by_member_id=inv.invited_by_member_id,
+        invited_by_display_name=inviter_name,
+        token=inv.token,
+        status=inv.status,
+        sent_at=inv.sent_at,
+        last_sent_at=inv.last_sent_at,
+        accepted_at=inv.accepted_at,
+        created_at=inv.created_at,
+    )
+
+
 @router.get("", response_model=list[InvitationResponse])
 def list_invitations(
     household_id: int | None = Query(None, description="Filter by household"),
@@ -53,7 +73,28 @@ def list_invitations(
         q = q.filter(Invitation.household_id == household_id)
     if status is not None:
         q = q.filter(Invitation.status == status)
-    return q.all()
+    return [_invitation_to_response(inv) for inv in q.all()]
+
+
+@router.get("/my-pending", response_model=list[InvitationResponse])
+def list_my_pending_invitations(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List pending invitations addressed to the current user's email."""
+    email = (current_user.email or "").strip().lower()
+    if not email:
+        return []
+    invites = (
+        db.query(Invitation)
+        .filter(
+            Invitation.email == email,
+            Invitation.status == "pending",
+        )
+        .order_by(Invitation.last_sent_at.desc(), Invitation.id.desc())
+        .all()
+    )
+    return [_invitation_to_response(inv) for inv in invites]
 
 
 def _send_invite_email_for(inv: Invitation) -> bool | None:
@@ -108,7 +149,7 @@ def create_invitation(
         db.commit()
         db.refresh(existing)
         email_sent = _send_invite_email_for(existing)
-        return InvitationSendResponse(invitation=InvitationResponse.model_validate(existing), email_sent=email_sent)
+        return InvitationSendResponse(invitation=_invitation_to_response(existing), email_sent=email_sent)
     token = _generate_token()
     while db.query(Invitation).filter(Invitation.token == token).first():
         token = _generate_token()
@@ -125,7 +166,7 @@ def create_invitation(
     db.commit()
     db.refresh(inv)
     email_sent = _send_invite_email_for(inv)
-    return InvitationSendResponse(invitation=InvitationResponse.model_validate(inv), email_sent=email_sent)
+    return InvitationSendResponse(invitation=_invitation_to_response(inv), email_sent=email_sent)
 
 
 @router.post("/resend/{invitation_id}", response_model=InvitationSendResponse)
@@ -149,7 +190,7 @@ def resend_invitation(
     db.commit()
     db.refresh(inv)
     email_sent = _send_invite_email_for(inv)
-    return InvitationSendResponse(invitation=InvitationResponse.model_validate(inv), email_sent=email_sent)
+    return InvitationSendResponse(invitation=_invitation_to_response(inv), email_sent=email_sent)
 
 
 @router.delete("/{invitation_id}", status_code=204)
@@ -170,13 +211,33 @@ def delete_invitation(
     return None
 
 
+@router.delete("/my-pending/{invitation_id}", status_code=204)
+def decline_my_pending_invitation(
+    invitation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Decline an invitation sent to the current user's email."""
+    inv = db.get(Invitation, invitation_id)
+    if not inv:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+    if inv.status != "pending":
+        raise HTTPException(status_code=400, detail="Invitation is no longer pending")
+    current_email = (current_user.email or "").strip().lower()
+    if inv.email.strip().lower() != current_email:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+    db.delete(inv)
+    db.commit()
+    return None
+
+
 @router.get("/by-token/{token}", response_model=InvitationResponse)
 def get_invitation_by_token(token: str, db: Session = Depends(get_db)):
     """Get invitation by token (e.g. for accept page)."""
     inv = db.query(Invitation).filter(Invitation.token == token).first()
     if not inv:
         raise HTTPException(status_code=404, detail="Invitation not found")
-    return inv
+    return _invitation_to_response(inv)
 
 
 @router.post("/accept", response_model=InvitationResponse)
@@ -210,7 +271,7 @@ def accept_invitation(
         inv.accepted_at = datetime.utcnow()
         db.commit()
         db.refresh(inv)
-        return inv
+        return _invitation_to_response(inv)
     member = Member(
         user_id=body.user_id,
         household_id=inv.household_id,
@@ -221,4 +282,4 @@ def accept_invitation(
     inv.accepted_at = datetime.utcnow()
     db.commit()
     db.refresh(inv)
-    return inv
+    return _invitation_to_response(inv)

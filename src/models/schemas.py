@@ -137,8 +137,10 @@ class InvitationCreate(BaseModel):
 class InvitationResponse(BaseModel):
     id: int
     household_id: int
+    household_name: Optional[str] = None
     email: str
     invited_by_member_id: int
+    invited_by_display_name: Optional[str] = None
     token: str
     status: str
     sent_at: datetime

@@ -66,6 +66,10 @@ export const getInvitationByToken = (token) => api.get(`/api/invitations/by-toke
 export const resendInvitation = (id) => api.post(`/api/invitations/resend/${id}`).then((r) => r.data)
 export const deleteInvitation = (id) => api.delete(`/api/invitations/${id}`)
 export const acceptInvitation = (body) => api.post('/api/invitations/accept', body).then((r) => r.data)
+export const listMyPendingInvitations = () =>
+  api.get('/api/invitations/my-pending').then((r) => r.data)
+export const declineMyPendingInvitation = (id) =>
+  api.delete(`/api/invitations/my-pending/${id}`)
 
 // Meal planner
 export const listMealSlots = (householdId) =>
