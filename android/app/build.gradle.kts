@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "cloud.lionfish.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "cloud.lionfish.app"
