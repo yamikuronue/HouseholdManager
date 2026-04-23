@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import {
   listMealSlots,
   listPlannedMeals,
+  createOrUpdatePlannedMeal,
   updatePlannedMeal,
   deletePlannedMeal,
   swapPlannedMeals,
