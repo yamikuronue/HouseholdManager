@@ -130,6 +130,13 @@ def update_member(
     if body.role is not None:
         member.role = body.role
     if body.event_color is not None:
+        if member.user_id != current_user.id and (
+            not my_membership or my_membership.role != "owner"
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="Only the household owner can change another member's color",
+            )
         member.event_color = body.event_color
     db.commit()
     db.refresh(member)

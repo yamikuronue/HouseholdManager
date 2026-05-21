@@ -364,19 +364,58 @@ export default function Settings() {
     }
   }
 
-  const handleEventColorChange = async (memberId, hex) => {
+  const applyMemberColorLocally = (memberId, hex, householdId) => {
+    setMyMembers((prev) =>
+      prev.map((m) => (m.id === memberId ? { ...m, event_color: hex } : m))
+    )
+    if (householdId != null) {
+      setMembersByHousehold((prev) => ({
+        ...prev,
+        [householdId]: (prev[householdId] || []).map((m) =>
+          m.id === memberId ? { ...m, event_color: hex } : m
+        ),
+      }))
+    }
+  }
+
+  const handleEventColorChange = async (memberId, hex, householdId = null) => {
     setError('')
     try {
       await updateMember(memberId, { event_color: hex })
-      setMyMembers((prev) =>
-        prev.map((m) => (m.id === memberId ? { ...m, event_color: hex } : m))
-      )
+      applyMemberColorLocally(memberId, hex, householdId)
       setSuccess('Event color updated.')
       setTimeout(() => setSuccess(''), 2000)
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
     }
   }
+
+  const renderMemberColorPicker = (memberId, currentColor, householdId, labelPrefix = 'Set color') => (
+    <div className="settings-event-color-options settings-member-color-options">
+      {DEFAULT_PASTEL_COLORS.map((hex) => (
+        <button
+          key={hex}
+          type="button"
+          className={`settings-color-swatch${currentColor === hex ? ' settings-color-swatch-selected' : ''}`}
+          style={{ backgroundColor: hex }}
+          title={hex}
+          aria-label={`${labelPrefix} ${hex}`}
+          aria-pressed={currentColor === hex}
+          onClick={() => handleEventColorChange(memberId, hex, householdId)}
+        />
+      ))}
+      <label className="settings-color-picker-label">
+        <input
+          type="color"
+          value={currentColor}
+          onChange={(e) => handleEventColorChange(memberId, e.target.value, householdId)}
+          className="settings-color-picker"
+          aria-label={`${labelPrefix} custom`}
+        />
+        <span className="settings-color-picker-text">Custom</span>
+      </label>
+    </div>
+  )
 
   const handleDeleteHousehold = async () => {
     const hid = selectedHouseholdId ? parseInt(selectedHouseholdId, 10) : null
@@ -475,6 +514,11 @@ export default function Settings() {
 
       <section className="dashboard-section">
         <h2>Members</h2>
+        {myMemberInSelected?.role === 'owner' && selectedHousehold && (
+          <p className="dashboard-muted">
+            As household owner, you can set each member&apos;s display color below.
+          </p>
+        )}
         {households.length === 0 ? (
           <p className="dashboard-muted">No households yet. Create one above, or accept an invite.</p>
         ) : !selectedHousehold ? (
@@ -489,31 +533,44 @@ export default function Settings() {
                   const isOwner = myMemberInSelected?.role === 'owner'
                   const canRemove = isOwner && !isMe && m.role !== 'owner'
                   const memberColor = m.event_color || DEFAULT_PASTEL_COLORS[0]
+                  const canEditColor = isOwner && !isMe
                   return (
-                    <li key={m.id} className="dashboard-list-item-with-action">
-                      <span className="settings-member-row">
-                        <span
-                          className="settings-member-color-swatch"
-                          style={{ backgroundColor: memberColor }}
-                          title={`${displayName}'s color`}
-                          aria-hidden
-                        />
-                        <span>
-                          {displayName}
-                          {m.role === 'owner' && (
-                            <span className="settings-role-badge settings-role-owner">Owner</span>
-                          )}
-                          {isMe && <span className="settings-role-badge settings-role-me">You</span>}
+                    <li key={m.id} className="settings-member-list-item">
+                      <div className="dashboard-list-item-with-action">
+                        <span className="settings-member-row">
+                          <span
+                            className="settings-member-color-swatch"
+                            style={{ backgroundColor: memberColor }}
+                            title={`${displayName}'s color`}
+                            aria-hidden
+                          />
+                          <span>
+                            {displayName}
+                            {m.role === 'owner' && (
+                              <span className="settings-role-badge settings-role-owner">Owner</span>
+                            )}
+                            {isMe && <span className="settings-role-badge settings-role-me">You</span>}
+                          </span>
                         </span>
-                      </span>
-                      {canRemove && (
-                        <button
-                          type="button"
-                          className="dashboard-btn-danger"
-                          onClick={() => handleRemoveMember(selectedHid, m.id, displayName)}
-                        >
-                          Remove
-                        </button>
+                        {canRemove && (
+                          <button
+                            type="button"
+                            className="dashboard-btn-danger"
+                            onClick={() => handleRemoveMember(selectedHid, m.id, displayName)}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      {canEditColor && (
+                        <div className="settings-member-color-edit">
+                          {renderMemberColorPicker(
+                            m.id,
+                            memberColor,
+                            selectedHid,
+                            `Set ${displayName}'s color to`
+                          )}
+                        </div>
                       )}
                     </li>
                   )
@@ -529,28 +586,12 @@ export default function Settings() {
           <h2>Your color</h2>
           <p className="dashboard-muted">Your calendar events and meal planner entries use this color for this household.</p>
           <div className="settings-event-color-row">
-            <div className="settings-event-color-options">
-              {DEFAULT_PASTEL_COLORS.map((hex) => (
-                <button
-                  key={hex}
-                  type="button"
-                  className="settings-color-swatch"
-                  style={{ backgroundColor: hex }}
-                  title={hex}
-                  aria-label={`Use ${hex}`}
-                  onClick={() => handleEventColorChange(myMemberInSelected.id, hex)}
-                />
-              ))}
-              <label className="settings-color-picker-label">
-                <input
-                  type="color"
-                  value={myMemberInSelected.event_color || DEFAULT_PASTEL_COLORS[0]}
-                  onChange={(e) => handleEventColorChange(myMemberInSelected.id, e.target.value)}
-                  className="settings-color-picker"
-                />
-                <span className="settings-color-picker-text">Custom</span>
-              </label>
-            </div>
+            {renderMemberColorPicker(
+              myMemberInSelected.id,
+              myMemberInSelected.event_color || DEFAULT_PASTEL_COLORS[0],
+              selectedHid,
+              'Use'
+            )}
           </div>
         </section>
       )}
