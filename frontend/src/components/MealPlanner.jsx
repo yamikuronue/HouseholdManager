@@ -195,6 +195,78 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
     d.setDate(d.getDate() + 1)
   }
 
+  const weeks = []
+  for (let i = 0; i < dates.length; i += 7) {
+    weeks.push(dates.slice(i, i + 7))
+  }
+
+  const formatDateLabel = (dateStr) =>
+    new Date(dateStr + 'Z').toLocaleDateString(undefined, {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    })
+
+  const renderMealCell = (dateStr, slot) => {
+    const meal = getMealFor(dateStr, slot.id)
+    const editing = isEditing(dateStr, slot.id)
+    const label = meal ? (meal.description || '—') : null
+    const isDraggingFrom =
+      draggingFrom?.dateStr === dateStr && draggingFrom?.slotId === slot.id
+    const isDropTarget =
+      dropTarget?.dateStr === dateStr && dropTarget?.slotId === slot.id
+    const canDrag = !!meal
+    return (
+      <td
+        key={`${dateStr}-${slot.id}`}
+        className={`meal-planner-cell meal-planner-cell-meal${isDraggingFrom ? ' meal-planner-cell-dragging' : ''}${isDropTarget ? ' meal-planner-cell-drop-target' : ''}`}
+        onClick={() => !editing && startEditing(dateStr, slot.id)}
+        onDragOver={(e) => handleDragOver(e, dateStr, slot.id)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, dateStr, slot.id)}
+      >
+        {editing ? (
+          <input
+            ref={editingInputRef}
+            type="text"
+            className="meal-planner-input"
+            placeholder="e.g. Cereal"
+            value={editingCell?.value ?? ''}
+            onChange={(e) => setEditingValue(e.target.value)}
+            onKeyDown={(e) => handleEditKeyDown(e, dateStr, slot.id)}
+            onBlur={() => saveEdit(dateStr, slot.id, editingCell?.value ?? '')}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : meal ? (
+          <span
+            className="meal-planner-entry"
+            style={{ borderLeftColor: meal.member_color || getMemberColor(meal.member_id) || '#888' }}
+            title={meal.member_display_name ? `${label} (${meal.member_display_name})` : label}
+          >
+            {canDrag && (
+              <span
+                className="meal-planner-drag-handle"
+                draggable
+                onDragStart={(e) => handleDragStart(e, meal, dateStr, slot.id)}
+                onDragEnd={handleDragEnd}
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Drag to move or swap meal"
+                title="Drag to move or swap"
+              >
+                <span className="meal-planner-drag-handle-icon" aria-hidden>
+                  ⋮⋮
+                </span>
+              </span>
+            )}
+            {label}
+          </span>
+        ) : (
+          <span className="meal-planner-empty-cell">+</span>
+        )}
+      </td>
+    )
+  }
+
   return (
     <div className="meal-planner">
       <div className="meal-planner-header">
@@ -232,85 +304,42 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
       {loading ? (
         <p className="meal-planner-muted">Loading…</p>
       ) : (
-        <div className="meal-planner-grid-wrap">
-          <table className="meal-planner-table">
-            <thead>
-              <tr>
-                <th className="meal-planner-cell meal-planner-cell-label" />
-                {dates.map((dateStr) => (
-                  <th key={dateStr} className="meal-planner-cell meal-planner-cell-header">
-                    {new Date(dateStr + 'Z').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {slots.map((slot) => (
-                <tr key={slot.id}>
-                  <td className="meal-planner-cell meal-planner-cell-label">{slot.name}</td>
-                  {dates.map((dateStr) => {
-                    const meal = getMealFor(dateStr, slot.id)
-                    const editing = isEditing(dateStr, slot.id)
-                    const label = meal ? (meal.description || '—') : null
-                    const isDraggingFrom =
-                      draggingFrom?.dateStr === dateStr && draggingFrom?.slotId === slot.id
-                    const isDropTarget =
-                      dropTarget?.dateStr === dateStr && dropTarget?.slotId === slot.id
-                    const canDrag = !!meal
-                    return (
-                      <td
-                        key={`${dateStr}-${slot.id}`}
-                        className={`meal-planner-cell meal-planner-cell-meal${isDraggingFrom ? ' meal-planner-cell-dragging' : ''}${isDropTarget ? ' meal-planner-cell-drop-target' : ''}`}
-                        onClick={() => !editing && startEditing(dateStr, slot.id)}
-                        onDragOver={(e) => handleDragOver(e, dateStr, slot.id)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, dateStr, slot.id)}
+        <div
+          className={`meal-planner-weeks${weeks.length === 1 ? ' meal-planner-weeks--single' : ''}`}
+        >
+          {weeks.map((weekDates, weekIndex) => (
+            <div key={weekIndex} className="meal-planner-week">
+              <table className="meal-planner-table">
+                <thead>
+                  <tr>
+                    <th className="meal-planner-cell meal-planner-cell-label" scope="col" />
+                    {slots.map((slot) => (
+                      <th
+                        key={slot.id}
+                        className="meal-planner-cell meal-planner-cell-header"
+                        scope="col"
                       >
-                        {editing ? (
-                          <input
-                            ref={editingInputRef}
-                            type="text"
-                            className="meal-planner-input"
-                            placeholder="e.g. Cereal"
-                            value={editingCell?.value ?? ''}
-                            onChange={(e) => setEditingValue(e.target.value)}
-                            onKeyDown={(e) => handleEditKeyDown(e, dateStr, slot.id)}
-                            onBlur={() => saveEdit(dateStr, slot.id, editingCell?.value ?? '')}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        ) : meal ? (
-                          <span
-                            className="meal-planner-entry"
-                            style={{ borderLeftColor: meal.member_color || getMemberColor(meal.member_id) || '#888' }}
-                            title={meal.member_display_name ? `${label} (${meal.member_display_name})` : label}
-                          >
-                            {canDrag && (
-                              <span
-                                className="meal-planner-drag-handle"
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, meal, dateStr, slot.id)}
-                                onDragEnd={handleDragEnd}
-                                onClick={(e) => e.stopPropagation()}
-                                aria-label="Drag to move or swap meal"
-                                title="Drag to move or swap"
-                              >
-                                <span className="meal-planner-drag-handle-icon" aria-hidden>
-                                  ⋮⋮
-                                </span>
-                              </span>
-                            )}
-                            {label}
-                          </span>
-                        ) : (
-                          <span className="meal-planner-empty-cell">+</span>
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        {slot.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {weekDates.map((dateStr) => (
+                    <tr key={dateStr}>
+                      <th
+                        className="meal-planner-cell meal-planner-cell-label"
+                        scope="row"
+                      >
+                        {formatDateLabel(dateStr)}
+                      </th>
+                      {slots.map((slot) => renderMealCell(dateStr, slot))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
         </div>
       )}
     </div>
