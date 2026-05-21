@@ -79,13 +79,24 @@
 
 .meal-planner-week {
   min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .meal-planner-table {
   width: 100%;
+  min-width: min(100%, 20rem);
   border-collapse: collapse;
   font-size: 0.9rem;
   table-layout: fixed;
+}
+
+.meal-planner-col-date {
+  width: 7.5rem;
+}
+
+.meal-planner-col-meal {
+  width: auto;
 }
 
 .meal-planner-cell {
@@ -94,12 +105,24 @@
   min-width: 0;
 }
 
-.meal-planner-cell-label {
+.meal-planner-cell-corner {
+  width: 7.5rem;
+  padding: 0.4rem 0.5rem;
+  background: #f5f5f5;
+}
+
+.meal-planner-cell-date {
   font-weight: 600;
   color: #333;
   white-space: nowrap;
-  width: 1%;
+  text-align: left;
+  vertical-align: middle;
   background: #fafafa;
+  width: 7.5rem;
+  min-width: 7.5rem;
+  max-width: 7.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meal-planner-cell-header {

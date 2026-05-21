@@ -310,9 +310,15 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
           {weeks.map((weekDates, weekIndex) => (
             <div key={weekIndex} className="meal-planner-week">
               <table className="meal-planner-table">
+                <colgroup>
+                  <col className="meal-planner-col-date" />
+                  {slots.map((slot) => (
+                    <col key={slot.id} className="meal-planner-col-meal" />
+                  ))}
+                </colgroup>
                 <thead>
                   <tr>
-                    <th className="meal-planner-cell meal-planner-cell-label" scope="col" />
+                    <th className="meal-planner-cell meal-planner-cell-corner" scope="col" />
                     {slots.map((slot) => (
                       <th
                         key={slot.id}
@@ -328,7 +334,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
                   {weekDates.map((dateStr) => (
                     <tr key={dateStr}>
                       <th
-                        className="meal-planner-cell meal-planner-cell-label"
+                        className="meal-planner-cell meal-planner-cell-date"
                         scope="row"
                       >
                         {formatDateLabel(dateStr)}
