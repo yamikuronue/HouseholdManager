@@ -200,12 +200,13 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
     weeks.push(dates.slice(i, i + 7))
   }
 
-  const formatDateLabel = (dateStr) =>
-    new Date(dateStr + 'Z').toLocaleDateString(undefined, {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-    })
+  const formatDateParts = (dateStr) => {
+    const d = new Date(dateStr + 'Z')
+    return {
+      weekday: d.toLocaleDateString(undefined, { weekday: 'short' }),
+      dateLine: d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
+    }
+  }
 
   const renderMealCell = (dateStr, slot) => {
     const meal = getMealFor(dateStr, slot.id)
@@ -331,17 +332,23 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
                   </tr>
                 </thead>
                 <tbody>
-                  {weekDates.map((dateStr) => (
-                    <tr key={dateStr}>
-                      <th
-                        className="meal-planner-cell meal-planner-cell-date"
-                        scope="row"
-                      >
-                        {formatDateLabel(dateStr)}
-                      </th>
-                      {slots.map((slot) => renderMealCell(dateStr, slot))}
-                    </tr>
-                  ))}
+                  {weekDates.map((dateStr) => {
+                    const { weekday, dateLine } = formatDateParts(dateStr)
+                    return (
+                      <tr key={dateStr}>
+                        <th
+                          className="meal-planner-cell meal-planner-cell-date"
+                          scope="row"
+                        >
+                          <span className="meal-planner-date-label">
+                            <span className="meal-planner-date-weekday">{weekday}</span>
+                            <span className="meal-planner-date-day">{dateLine}</span>
+                          </span>
+                        </th>
+                        {slots.map((slot) => renderMealCell(dateStr, slot))}
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
