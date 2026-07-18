@@ -207,48 +207,6 @@ alembic revision --autogenerate -m "describe change"
 alembic upgrade head   # optional locally; production runs this on startup
 ```
 
-## Deployment
-
-### Cheapest on DigitalOcean (one component)
-
-To run **frontend + backend as a single app** (~$5/mo): use the root **Dockerfile** (fullstack build) on App Platform and follow [docs/SINGLE-COMPONENT-DEPLOY.md](docs/SINGLE-COMPONENT-DEPLOY.md). The backend serves the built React app and the API from the same URL. Local backend-only image: `Dockerfile.backend` (used by docker-compose).
-
-### DigitalOcean App Platform (two components)
-
-Complete deployment guide available in [docs/SETUP_DIGITALOCEAN.md](docs/SETUP_DIGITALOCEAN.md)
-
-**Quick Start:**
-1. Update `app.yaml` with your GitHub repository
-2. Set secrets in DigitalOcean App Platform console (see [docs/ENV_VARIABLES.md](docs/ENV_VARIABLES.md))
-3. Deploy via `doctl apps create --spec app.yaml` or web console
-4. Update Google Cloud Console with production redirect URI
-
-**Required Environment Variables:**
-- `GOOGLE_CLIENT_ID` (encrypted secret)
-- `GOOGLE_CLIENT_SECRET` (encrypted secret)
-- `SECRET_KEY` (encrypted secret)
-- `DATABASE_URL` (encrypted secret, or use managed database)
-
-See [docs/ENV_VARIABLES.md](docs/ENV_VARIABLES.md) for complete reference.
-
-### Credential Storage
-
-**For DigitalOcean App Platform (Recommended):**
-- Use App Platform's built-in encrypted environment variables
-- Set secrets in Settings > App-Level Environment Variables
-- Mark sensitive values as "Encrypted" type
-- Never commit `.env` files to git
-
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed instructions.
-
-## Next Steps
-
-1. Implement Google OAuth flow in `src/api/routes/auth.py`
-2. Complete Google Calendar API integration in `src/services/google_calendar.py`
-3. Implement calendar aggregation logic
-4. Add error handling and loading states
-5. Enhance UI/UX
-
 ## License
 
 MIT License - see LICENSE file for details
