@@ -9,7 +9,7 @@ from urllib.parse import quote, urlencode
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from jose import JWTError, jwt
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -39,7 +39,37 @@ def _pkce_code_challenge(verifier: str) -> str:
     return base64.urlsafe_b64encode(digest).decode().rstrip("=")
 
 
-def _google_auth_url(state: str, code_challenge: str) -> str:
+def _truthy_query(value: str | None) -> bool:
+    return value is not None and str(value).lower() in ("1", "true", "yes")
+
+
+def _cookie_secure() -> bool:
+    frontend_base = settings.frontend_base_url
+    return bool(frontend_base and frontend_base.startswith("https://"))
+
+
+def _set_session_cookie(response: Response, jwt_token: str) -> None:
+    response.set_cookie(
+        COOKIE_NAME,
+        jwt_token,
+        max_age=COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=_cookie_secure(),
+        path="/",
+    )
+
+
+def _jwt_should_slide(payload: dict) -> bool:
+    """True when remaining JWT life is under half of JWT_EXPIRE_HOURS."""
+    exp = payload.get("exp")
+    if exp is None:
+        return False
+    remaining = float(exp) - time.time()
+    return remaining < (JWT_EXPIRE_HOURS * 3600) / 2
+
+
+def _google_auth_url(state: str, code_challenge: str, *, force_consent: bool = False) -> str:
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
         "redirect_uri": settings.GOOGLE_REDIRECT_URI,
@@ -49,7 +79,10 @@ def _google_auth_url(state: str, code_challenge: str) -> str:
         # so we do not request `openid`.
         "scope": "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events",
         "access_type": "offline",
-        "prompt": "consent",
+        "include_granted_scopes": "true",
+        # consent only when we need a new refresh token; otherwise Google treats each
+        # login as a new grant and emails a security alert.
+        "prompt": "consent" if force_consent else "select_account",
         "state": state,
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
@@ -167,6 +200,10 @@ async def initiate_google_auth(
         None,
         description="If 1/true, after OAuth redirect with an Android intent:// URL (see ANDROID_APP_PACKAGE).",
     ),
+    force_consent: str | None = Query(
+        None,
+        description="If 1/true, send prompt=consent so Google issues a new refresh token (Reconnect Google).",
+    ),
 ):
     """Redirect to Google OAuth with state and PKCE. Sets oauth_state and oauth_verifier cookies."""
     if not settings.GOOGLE_CLIENT_ID:
@@ -179,10 +216,11 @@ async def initiate_google_auth(
     code_challenge = _pkce_code_challenge(code_verifier)
     frontend_base = settings.frontend_base_url
     secure = frontend_base.startswith("https://") if frontend_base else False
-    response = RedirectResponse(url=_google_auth_url(state, code_challenge))
+    want_consent = _truthy_query(force_consent)
+    response = RedirectResponse(url=_google_auth_url(state, code_challenge, force_consent=want_consent))
     response.set_cookie(OAUTH_STATE_COOKIE, state, max_age=600, httponly=True, samesite="lax", secure=secure)
     response.set_cookie(OAUTH_VERIFIER_COOKIE, code_verifier, max_age=600, httponly=True, samesite="lax", secure=secure)
-    want_app = return_app is not None and str(return_app).lower() in ("1", "true", "yes")
+    want_app = _truthy_query(return_app)
     if want_app:
         response.set_cookie(OAUTH_RETURN_APP_COOKIE, "1", max_age=600, httponly=True, samesite="lax", secure=secure)
     return response
@@ -301,18 +339,8 @@ async def exchange_code(body: ExchangeBody, response: Response):
     if time.time() > expiry:
         raise HTTPException(status_code=400, detail="Code expired")
     jwt_token = create_access_token(user_id, email)
-    frontend_base = settings.frontend_base_url
-    secure = frontend_base.startswith("https://") if frontend_base else False
     response = Response(status_code=204)
-    response.set_cookie(
-        COOKIE_NAME,
-        jwt_token,
-        max_age=COOKIE_MAX_AGE,
-        httponly=True,
-        samesite="lax",
-        secure=secure,
-        path="/",
-    )
+    _set_session_cookie(response, jwt_token)
     return response
 
 
@@ -330,7 +358,11 @@ def get_current_user_info(
     authorization: str | None = Header(None),
     db: Session = Depends(get_db),
 ):
-    """Return current user from cookie or Bearer token. Returns 401 if invalid."""
+    """Return current user from cookie or Bearer token. Returns 401 if invalid.
+
+    If the session JWT is past the halfway mark of its lifetime, re-issue the
+    HttpOnly cookie so daily users stay signed in without hitting Google OAuth.
+    """
     token = _token_from_request(request, authorization)
     if not token:
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header or cookie")
@@ -341,18 +373,27 @@ def get_current_user_info(
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
-    return {
+    body = {
         "id": user.id,
         "email": user.email,
         "display_name": user.display_name,
         "avatar_url": user.avatar_url,
         "google_sub": user.google_sub,
     }
+    if _jwt_should_slide(payload):
+        response = JSONResponse(content=body)
+        _set_session_cookie(response, create_access_token(user.id, user.email))
+        return response
+    return body
 
 
 @router.get("/google-calendars")
-async def list_google_calendars(current_user: User = Depends(get_current_user)):
+async def list_google_calendars(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """List the current user's Google calendars. Uses decrypted access token."""
+    refresh_google_token_if_needed(current_user, db)
     access_token = get_decrypted_access_token(current_user)
     if not access_token:
         raise HTTPException(

@@ -241,6 +241,43 @@ def test_create_event_success(mock_async_client, client, calendar, auth_headers)
     mock_post.assert_called_once()
 
 
+@patch("src.api.routes.events.refresh_google_token_if_needed")
+@patch("src.api.routes.events.httpx.AsyncClient")
+def test_create_event_refreshes_google_token(
+    mock_async_client, mock_refresh, client, calendar, auth_headers
+):
+    """Create event refreshes the Google access token before calling Google."""
+    mock_refresh.return_value = True
+    mock_response = MagicMock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = {
+        "id": "google-event-id-refresh",
+        "summary": "Refreshed Event",
+        "start": {"dateTime": "2024-06-01T10:00:00Z"},
+        "end": {"dateTime": "2024-06-01T11:00:00Z"},
+        "htmlLink": "https://www.google.com/calendar/event?eid=ref",
+    }
+    mock_post = AsyncMock(return_value=mock_response)
+    mock_client_instance = MagicMock()
+    mock_client_instance.post = mock_post
+    mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
+    mock_client_instance.__aexit__ = AsyncMock(return_value=None)
+    mock_async_client.return_value = mock_client_instance
+
+    r = client.post(
+        "/api/events",
+        headers=auth_headers,
+        json={
+            "calendar_id": calendar.id,
+            "title": "Refreshed Event",
+            "start": "2024-06-01T10:00:00Z",
+            "end": "2024-06-01T11:00:00Z",
+        },
+    )
+    assert r.status_code == 200
+    mock_refresh.assert_called_once()
+
+
 # ----- GET /api/events (includes html_link) -----
 
 

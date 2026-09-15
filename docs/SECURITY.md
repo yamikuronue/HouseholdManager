@@ -66,6 +66,7 @@ Assessment of the Household Manager app against modern security practices (OWASP
 4. **Rate limiting**: Only `/api/auth/*` is rate-limited (in-memory: 20 requests per 60 seconds per IP). Returns 429 when exceeded.
 5. **OAuth state + PKCE**: Initiate sets `oauth_state` and `oauth_verifier` cookies; redirect includes `state` and `code_challenge` (S256). Callback verifies `state` and sends `code_verifier` when exchanging the code with Google.
 6. **Encryption at rest**: When `ENCRYPTION_KEY` (Fernet key) is set, **refresh_token** and **access_token** are encrypted before saving to the DB and decrypted when read. Set in production: `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+7. **OAuth prompt**: Login uses `prompt=select_account` (plus `access_type=offline`) so returning users reuse an existing Google grant instead of triggering a “new sign-in” security alert. `prompt=consent` is only sent for Settings → Reconnect Google (`?force_consent=1`). `GET /api/auth/me` slides the 7-day session cookie when the JWT is past halfway.
 
 ### Rotating the encryption key
 

@@ -183,6 +183,8 @@ async def create_event(
             detail="You can only add events to calendars you own. Select one of your calendars.",
         )
     user = cal.member.user
+    if user:
+        refresh_google_token_if_needed(user, db)
     access_token = get_decrypted_access_token(user) if user else None
     if not user or not access_token:
         raise HTTPException(

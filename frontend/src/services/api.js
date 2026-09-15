@@ -18,13 +18,14 @@ export const getAuthMe = () => api.get('/api/auth/me').then((r) => r.data)
 const isLionfishAndroidWebView =
   typeof navigator !== 'undefined' && /LionfishWebView\//i.test(navigator.userAgent)
 
-export const getGoogleAuthUrl = () => {
+export const getGoogleAuthUrl = ({ forceConsent = false, returnApp } = {}) => {
   const base = `${API_BASE_URL}/api/auth/google`
-  if (isLionfishAndroidWebView) {
-    const q = new URLSearchParams({ return_app: '1' })
-    return `${base}?${q.toString()}`
-  }
-  return base
+  const wantApp = returnApp ?? isLionfishAndroidWebView
+  const q = new URLSearchParams()
+  if (wantApp) q.set('return_app', '1')
+  if (forceConsent) q.set('force_consent', '1')
+  const qs = q.toString()
+  return qs ? `${base}?${qs}` : base
 }
 export const exchangeCodeForSession = (code) =>
   api.post('/api/auth/exchange', { code }).then((r) => r.data)

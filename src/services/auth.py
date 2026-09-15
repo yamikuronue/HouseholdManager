@@ -22,7 +22,8 @@ class AuthService:
             "scope": self.scope,
             "response_type": "code",
             "access_type": "offline",  # Get refresh token
-            "prompt": "consent"
+            "include_granted_scopes": "true",
+            "prompt": "select_account",
         }
         return f"https://accounts.google.com/o/oauth2/auth?{urlencode(params)}"
     
