@@ -1,0 +1,107 @@
+.app-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.app-dialog {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 420px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.app-dialog-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  color: #1a1a2e;
+}
+
+.app-dialog-message {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+.app-dialog-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.app-dialog-prompt-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.app-dialog-prompt input {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.app-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.app-dialog-actions button {
+  min-height: 2.75rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.app-dialog-confirm {
+  background: #1a1a2e;
+  color: #fff;
+  border: 1px solid #1a1a2e;
+}
+
+.app-dialog-confirm:hover,
+.app-dialog-confirm:focus-visible {
+  background: #16213e;
+}
+
+.app-dialog-confirm-danger {
+  background: #c62828;
+  color: #fff;
+  border: 1px solid #b71c1c;
+}
+
+.app-dialog-confirm-danger:hover,
+.app-dialog-confirm-danger:focus-visible {
+  background: #b71c1c;
+}
+
+.app-dialog-cancel {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ccc;
+}
+
+.app-dialog-cancel:hover,
+.app-dialog-cancel:focus-visible {
+  background: #ececec;
+}
+
+@media (max-width: 480px) {
+  .app-dialog {
+    padding: 1rem;
+  }
+}

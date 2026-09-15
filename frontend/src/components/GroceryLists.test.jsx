@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import GroceryLists from './GroceryLists'
+import { pointerDragTo } from '../test/pointerDrag'
 
 vi.mock('../services/api', () => ({
   listGroceryLists: vi.fn(),
@@ -143,18 +144,6 @@ describe('GroceryLists item delete flow', () => {
   })
 })
 
-function dataTransferMock() {
-  const data = {}
-  return {
-    effectAllowed: 'all',
-    dropEffect: 'none',
-    setData: (type, value) => {
-      data[type] = value
-    },
-    getData: (type) => data[type] || '',
-  }
-}
-
 describe('GroceryLists other flows', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -192,29 +181,30 @@ describe('GroceryLists other flows', () => {
     expect(await screen.findByText('items failed')).toBeInTheDocument()
   })
 
-  it('creates a list from the prompt and ignores cancel', async () => {
+  it('creates a list from the in-app prompt and ignores cancel', async () => {
     const user = userEvent.setup()
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValueOnce('Trader Joes').mockReturnValueOnce(null)
     render(<GroceryLists householdId={7} myMemberId={1} />)
     await screen.findByText('Eggs')
     await user.click(screen.getByRole('button', { name: '+ Add list' }))
+    await user.type(screen.getByLabelText('List name'), 'Trader Joes')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
     await waitFor(() =>
       expect(createGroceryList).toHaveBeenCalledWith({ household_id: 7, name: 'Trader Joes' })
     )
     await user.click(screen.getByRole('button', { name: '+ Add list' }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(createGroceryList).toHaveBeenCalledTimes(1)
-    promptSpy.mockRestore()
   })
 
   it('shows an error when creating a list fails', async () => {
     const user = userEvent.setup()
-    vi.spyOn(window, 'prompt').mockReturnValue('Fail list')
     createGroceryList.mockRejectedValue(new Error('create list failed'))
     render(<GroceryLists householdId={7} myMemberId={1} />)
     await screen.findByText('Eggs')
     await user.click(screen.getByRole('button', { name: '+ Add list' }))
+    await user.type(screen.getByLabelText('List name'), 'Fail list')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
     expect(await screen.findByText('create list failed')).toBeInTheDocument()
-    window.prompt.mockRestore()
   })
 
   it('does not show a list delete control when only one list exists', async () => {
@@ -223,7 +213,7 @@ describe('GroceryLists other flows', () => {
     expect(screen.queryByRole('button', { name: 'Delete Costco' })).not.toBeInTheDocument()
   })
 
-  it('deletes a list after native confirm when more than one list exists', async () => {
+  it('deletes a list after in-app confirm when more than one list exists', async () => {
     const user = userEvent.setup()
     listGroceryLists
       .mockResolvedValueOnce([
@@ -231,25 +221,22 @@ describe('GroceryLists other flows', () => {
         { id: 4, name: 'Aldi', household_id: 7 },
       ])
       .mockResolvedValueOnce([{ id: 4, name: 'Aldi', household_id: 7 }])
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(<GroceryLists householdId={7} myMemberId={1} />)
-    await screen.findByRole('button', { name: 'Delete Costco' })
-    await user.click(screen.getByRole('button', { name: 'Delete Costco' }))
+    await user.click(await screen.findByRole('button', { name: 'Delete Costco' }))
+    await user.click(screen.getByRole('button', { name: 'Remove' }))
     await waitFor(() => expect(deleteGroceryList).toHaveBeenCalledWith(3))
-    confirmSpy.mockRestore()
   })
 
-  it('does not delete a list when confirm is declined', async () => {
+  it('does not delete a list when confirm is cancelled', async () => {
     const user = userEvent.setup()
     listGroceryLists.mockResolvedValue([
       { id: 3, name: 'Costco', household_id: 7 },
       { id: 4, name: 'Aldi', household_id: 7 },
     ])
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<GroceryLists householdId={7} myMemberId={1} />)
     await user.click(await screen.findByRole('button', { name: 'Delete Costco' }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(deleteGroceryList).not.toHaveBeenCalled()
-    window.confirm.mockRestore()
   })
 
   it('shows an error when list delete fails', async () => {
@@ -258,12 +245,11 @@ describe('GroceryLists other flows', () => {
       { id: 3, name: 'Costco', household_id: 7 },
       { id: 4, name: 'Aldi', household_id: 7 },
     ])
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     deleteGroceryList.mockRejectedValue({ response: { data: { detail: 'list delete failed' } } })
     render(<GroceryLists householdId={7} myMemberId={1} />)
     await user.click(await screen.findByRole('button', { name: 'Delete Costco' }))
+    await user.click(screen.getByRole('button', { name: 'Remove' }))
     expect(await screen.findByText('list delete failed')).toBeInTheDocument()
-    window.confirm.mockRestore()
   })
 
   it('navigates grocery tabs with arrow keys, Home, and End', async () => {
@@ -422,14 +408,7 @@ describe('GroceryLists other flows', () => {
     await screen.findByText('Eggs')
     const handles = screen.getAllByLabelText('Drag to reorder')
     const rows = screen.getAllByRole('listitem')
-    const dt = dataTransferMock()
-    fireEvent.dragStart(handles[0], { dataTransfer: dt })
-    await waitFor(() => expect(rows[0]).toHaveClass('grocery-list-item-dragging'))
-    fireEvent.dragOver(rows[1], { dataTransfer: dt })
-    await waitFor(() => expect(rows[1]).toHaveClass('grocery-list-item-drop-target'))
-    fireEvent.dragLeave(rows[1])
-    fireEvent.drop(rows[1], { dataTransfer: dt })
-    fireEvent.dragEnd(handles[0])
+    pointerDragTo(handles[0], rows[1])
     await waitFor(() => expect(updateGroceryListItem).toHaveBeenCalledWith(22, { position: 0 }))
     expect(updateGroceryListItem).toHaveBeenCalledWith(21, { position: 1 })
   })
@@ -439,9 +418,7 @@ describe('GroceryLists other flows', () => {
     await screen.findByText('Eggs')
     const handles = screen.getAllByLabelText('Drag to reorder')
     const rows = screen.getAllByRole('listitem')
-    const dt = dataTransferMock()
-    fireEvent.dragStart(handles[0], { dataTransfer: dt })
-    fireEvent.drop(rows[0], { dataTransfer: dt })
+    pointerDragTo(handles[0], rows[0])
     expect(updateGroceryListItem).not.toHaveBeenCalled()
   })
 
@@ -451,10 +428,7 @@ describe('GroceryLists other flows', () => {
     await screen.findByText('Eggs')
     const handles = screen.getAllByLabelText('Drag to reorder')
     const rows = screen.getAllByRole('listitem')
-    const dt = dataTransferMock()
-    fireEvent.dragStart(handles[0], { dataTransfer: dt })
-    await waitFor(() => expect(rows[0]).toHaveClass('grocery-list-item-dragging'))
-    fireEvent.drop(rows[1], { dataTransfer: dt })
+    pointerDragTo(handles[0], rows[1])
     await waitFor(() => expect(listGroceryListItems).toHaveBeenCalledTimes(2))
   })
 
