@@ -18,6 +18,7 @@ import {
   listCalendars,
   deleteCalendar,
   getGoogleCalendars,
+  getGoogleAuthUrl,
   updateMember,
   updateHousehold,
   listMealSlots,
@@ -480,6 +481,22 @@ export default function Settings() {
           {success}
         </div>
       )}
+
+      <section className="dashboard-section settings-google-account">
+        <h2>Google account</h2>
+        <p className="dashboard-muted">
+          Use Reconnect Google if calendars fail after a token issue. This will re-prompt Google once.
+        </p>
+        <button
+          type="button"
+          className="dashboard-btn-secondary"
+          onClick={() => {
+            window.location.href = getGoogleAuthUrl({ forceConsent: true })
+          }}
+        >
+          Reconnect Google
+        </button>
+      </section>
 
       {households.length > 0 && (
         <section className="dashboard-section settings-household-context settings-household-context-top">
