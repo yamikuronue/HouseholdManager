@@ -1,0 +1,22 @@
+{
+  "name": "Lionfish (household manager)",
+  "user": "ubuntu",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "backend",
+      "description": "FastAPI backend (uvicorn) on http://localhost:8000 using local PostgreSQL.",
+      "command": "DATABASE_URL=postgresql://lionfish:lionfish@localhost:5432/lionfish SECRET_KEY=local-dev-secret-key FRONTEND_URL=http://localhost:3000 GOOGLE_REDIRECT_URI=http://localhost:8000/api/auth/callback ENVIRONMENT=development PYTHONPATH=. ./venv/bin/uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload"
+    },
+    {
+      "name": "frontend",
+      "description": "React + Vite dev server on http://localhost:3000 (proxies /api to the backend).",
+      "command": "cd frontend && npm run dev -- --host 0.0.0.0"
+    }
+  ],
+  "ports": [
+    { "name": "backend", "port": 8000 },
+    { "name": "frontend", "port": 3000 }
+  ]
+}
