@@ -38,6 +38,8 @@ Redeploy the web app after updating the file.
 - [ ] **Session persistence:** kill app, reopen — still logged in (cookie).
 - [ ] **Logout / login again:** no stale PKCE cookies; second login works.
 - [ ] **Invite link:** open `https://lionfish.cloud/invite/accept?token=…` from email → resolves to app (App Link or “Open with”).
+- [ ] **Meal planner drag:** drag a meal by the ⋮⋮ handle onto another square (move) and onto another meal (swap). HTML5 drag-and-drop is not used; pointer events work in WebView.
+- [ ] **In-app dialogs:** Settings remove/delete actions and grocery “Add list” show an in-app dialog, not a native `confirm`/`prompt` (those often never appear in WebView).
 
 ## Play Console / policy
 

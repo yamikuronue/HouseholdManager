@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { getCalendars, addCalendar, removeCalendar } from '../services/api'
+import AppDialog from './AppDialog'
 import './CalendarList.css'
 
 function CalendarList() {
   const [calendars, setCalendars] = useState([])
   const [loading, setLoading] = useState(true)
+  const [notice, setNotice] = useState('')
+  const [removeId, setRemoveId] = useState(null)
 
   useEffect(() => {
     loadCalendars()
@@ -22,18 +25,18 @@ function CalendarList() {
   }
 
   const handleAddCalendar = async () => {
-    // TODO: Implement Google OAuth flow
-    alert('Google Calendar integration coming soon!')
+    setNotice('Google Calendar integration coming soon!')
   }
 
-  const handleRemoveCalendar = async (calendarId) => {
-    if (window.confirm('Are you sure you want to remove this calendar?')) {
-      try {
-        await removeCalendar(calendarId)
-        loadCalendars()
-      } catch (error) {
-        console.error('Error removing calendar:', error)
-      }
+  const confirmRemoveCalendar = async () => {
+    const calendarId = removeId
+    setRemoveId(null)
+    if (!calendarId) return
+    try {
+      await removeCalendar(calendarId)
+      loadCalendars()
+    } catch (error) {
+      console.error('Error removing calendar:', error)
     }
   }
 
@@ -44,6 +47,7 @@ function CalendarList() {
   return (
     <div className="calendar-list">
       <h2>Connected Calendars</h2>
+      {notice && <p role="status">{notice}</p>}
       <button onClick={handleAddCalendar} className="add-calendar-btn">
         + Add Google Calendar
       </button>
@@ -54,7 +58,7 @@ function CalendarList() {
               {calendar.name}
             </span>
             <button
-              onClick={() => handleRemoveCalendar(calendar.id)}
+              onClick={() => setRemoveId(calendar.id)}
               className="remove-btn"
             >
               Remove
@@ -62,6 +66,15 @@ function CalendarList() {
           </li>
         ))}
       </ul>
+      <AppDialog
+        open={removeId != null}
+        title="Remove calendar"
+        message="Are you sure you want to remove this calendar?"
+        confirmLabel="Remove"
+        danger
+        onCancel={() => setRemoveId(null)}
+        onConfirm={confirmRemoveCalendar}
+      />
     </div>
   )
 }

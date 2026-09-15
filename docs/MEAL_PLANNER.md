@@ -11,6 +11,10 @@ The meal planner shows a configurable set of meal types (e.g. Breakfast, Lunch, 
 
 Any household member can claim a meal for a day/slot. The planner shows their name and color. Only the current user can assign themselves (member_id must be the current user’s member for that household). One planned meal per (household, date, meal_slot); adding again replaces the existing one.
 
+## Moving meals
+
+Drag the ⋮⋮ handle on a meal to another square to move it, or onto another meal to swap. This uses **pointer events** (mouse and touch), not HTML5 drag-and-drop, so it works in the Android WebView app as well as desktop browsers.
+
 ## API summary
 
 - `GET /api/meal-slots?household_id=` — list meal types (creates defaults if none).

@@ -1,8 +1,9 @@
 import React from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import TodoList from './TodoList'
+import { pointerDragTo } from '../test/pointerDrag'
 
 vi.mock('../services/api', () => ({
   listTodos: vi.fn(),
@@ -127,18 +128,6 @@ describe('TodoList delete flow', () => {
     await waitFor(() => expect(screen.queryByText('Weekend')).not.toBeInTheDocument())
   })
 })
-
-function dataTransferMock() {
-  const data = {}
-  return {
-    effectAllowed: 'all',
-    dropEffect: 'none',
-    setData: (type, value) => {
-      data[type] = value
-    },
-    getData: (type) => data[type] || '',
-  }
-}
 
 describe('TodoList other flows', () => {
   beforeEach(() => {
@@ -292,16 +281,7 @@ describe('TodoList other flows', () => {
     await screen.findByText('Buy milk')
     const handles = screen.getAllByLabelText('Drag to reorder')
     const rows = screen.getAllByRole('listitem')
-    const dt = dataTransferMock()
-
-    fireEvent.dragStart(handles[0], { dataTransfer: dt })
-    await waitFor(() => expect(rows[0]).toHaveClass('todo-item-dragging'))
-    fireEvent.dragOver(rows[1], { dataTransfer: dt })
-    await waitFor(() => expect(rows[1]).toHaveClass('todo-item-drop-target'))
-    fireEvent.dragLeave(rows[1])
-    fireEvent.dragOver(rows[1], { dataTransfer: dt })
-    fireEvent.drop(rows[1], { dataTransfer: dt })
-    fireEvent.dragEnd(handles[0])
+    pointerDragTo(handles[0], rows[1])
 
     await waitFor(() => expect(updateTodo).toHaveBeenCalled())
     expect(updateTodo).toHaveBeenCalledWith(12, { position: 0 })
@@ -313,10 +293,7 @@ describe('TodoList other flows', () => {
     await screen.findByText('Buy milk')
     const handles = screen.getAllByLabelText('Drag to reorder')
     const rows = screen.getAllByRole('listitem')
-    const dt = dataTransferMock()
-    fireEvent.dragStart(handles[0], { dataTransfer: dt })
-    fireEvent.dragOver(rows[0], { dataTransfer: dt })
-    fireEvent.drop(rows[0], { dataTransfer: dt })
+    pointerDragTo(handles[0], rows[0])
     expect(updateTodo).not.toHaveBeenCalled()
   })
 
@@ -326,10 +303,7 @@ describe('TodoList other flows', () => {
     await screen.findByText('Buy milk')
     const handles = screen.getAllByLabelText('Drag to reorder')
     const rows = screen.getAllByRole('listitem')
-    const dt = dataTransferMock()
-    fireEvent.dragStart(handles[0], { dataTransfer: dt })
-    await waitFor(() => expect(rows[0]).toHaveClass('todo-item-dragging'))
-    fireEvent.drop(rows[1], { dataTransfer: dt })
+    pointerDragTo(handles[0], rows[1])
     await waitFor(() => expect(listTodos).toHaveBeenCalledTimes(2))
   })
 

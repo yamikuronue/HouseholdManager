@@ -61,6 +61,7 @@
   padding: 0.2rem;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: none;
 }
 
 .todo-item-drag-handle:active {

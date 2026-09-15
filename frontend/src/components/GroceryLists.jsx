@@ -9,6 +9,8 @@ import {
   deleteGroceryListItem,
 } from '../services/api'
 import ConfirmDeleteButton from './ConfirmDeleteButton'
+import AppDialog from './AppDialog'
+import usePointerDrag, { persistReorder } from '../hooks/usePointerDrag'
 import './GroceryLists.css'
 
 export default function GroceryLists({ householdId, myMemberId }) {
@@ -20,8 +22,7 @@ export default function GroceryLists({ householdId, myMemberId }) {
   const [newContent, setNewContent] = useState('')
   const [newIsSection, setNewIsSection] = useState(false)
   const [error, setError] = useState('')
-  const [draggedIndex, setDraggedIndex] = useState(null)
-  const [dropTargetIndex, setDropTargetIndex] = useState(null)
+  const [listDialog, setListDialog] = useState(null)
   const [clearingChecked, setClearingChecked] = useState(false)
 
   const loadLists = useCallback(async () => {
@@ -67,6 +68,23 @@ export default function GroceryLists({ householdId, myMemberId }) {
     loadItems()
   }, [loadItems])
 
+  const applyReorder = useCallback(
+    async (fromIndex, toId) => {
+      const toIndex = Number(toId)
+      setError('')
+      try {
+        const reordered = await persistReorder(items, fromIndex, toIndex, updateGroceryListItem)
+        setItems(reordered)
+      } catch (err) {
+        setError(err.response?.data?.detail || err.message)
+        loadItems()
+      }
+    },
+    [items, loadItems]
+  )
+
+  const { activeId, overId, bindHandle } = usePointerDrag(applyReorder)
+
   // Move focus to the active tab when it changes (e.g. after Arrow key navigation)
   useEffect(() => {
     if (activeListId) {
@@ -77,12 +95,18 @@ export default function GroceryLists({ householdId, myMemberId }) {
     }
   }, [activeListId])
 
-  const handleAddList = async () => {
-    const name = window.prompt('Store or list name (e.g. Costco):', '')
-    if (name == null || !name.trim() || !householdId) return
+  const handleAddList = () => {
+    if (!householdId) return
+    setListDialog({ type: 'prompt' })
+  }
+
+  const submitNewList = async (name) => {
+    const trimmed = (name || '').trim()
+    setListDialog(null)
+    if (!trimmed || !householdId) return
     setError('')
     try {
-      const created = await createGroceryList({ household_id: householdId, name: name.trim() })
+      const created = await createGroceryList({ household_id: householdId, name: trimmed })
       setLists((prev) => [...prev, created])
       setActiveListId(created.id)
     } catch (e) {
@@ -90,10 +114,16 @@ export default function GroceryLists({ householdId, myMemberId }) {
     }
   }
 
-  const handleDeleteList = async (listId, e) => {
+  const handleDeleteList = (listId, e) => {
     e.stopPropagation()
     if (lists.length <= 1) return
-    if (!window.confirm('Remove this list and all its items?')) return
+    setListDialog({ type: 'confirm-delete', listId })
+  }
+
+  const confirmDeleteList = async () => {
+    const listId = listDialog?.listId
+    setListDialog(null)
+    if (!listId) return
     setError('')
     try {
       await deleteGroceryList(listId)
@@ -173,52 +203,6 @@ export default function GroceryLists({ householdId, myMemberId }) {
       loadItems()
     } finally {
       setClearingChecked(false)
-    }
-  }
-
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index)
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', String(index))
-  }
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null)
-    setDropTargetIndex(null)
-  }
-
-  const handleDragOver = (e, index) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    if (draggedIndex === null || draggedIndex === index) return
-    setDropTargetIndex(index)
-  }
-
-  const handleDragLeave = () => setDropTargetIndex(null)
-
-  const handleDrop = async (e, dropIndex) => {
-    e.preventDefault()
-    setDropTargetIndex(null)
-    const dragIndex = draggedIndex
-    setDraggedIndex(null)
-    if (dragIndex == null || dragIndex === dropIndex) return
-    const reordered = [...items]
-    const [removed] = reordered.splice(dragIndex, 1)
-    reordered.splice(dropIndex, 0, removed)
-    setItems(reordered)
-    setError('')
-    const toUpdate = reordered
-      .map((item, idx) => (item.position !== idx ? { item, newPosition: idx } : null))
-      .filter(Boolean)
-    try {
-      await Promise.all(
-        toUpdate.map(({ item, newPosition }) =>
-          updateGroceryListItem(item.id, { position: newPosition })
-        )
-      )
-    } catch (err) {
-      setError(err.response?.data?.detail || err.message)
-      loadItems()
     }
   }
 
@@ -305,16 +289,12 @@ export default function GroceryLists({ householdId, myMemberId }) {
                     {items.map((item, index) => (
                       <li
                         key={item.id}
-                        className={`grocery-list-item ${item.is_section_header ? 'grocery-list-item-section' : ''} ${!item.is_section_header && item.is_checked ? 'grocery-list-item-checked' : ''} ${draggedIndex === index ? 'grocery-list-item-dragging' : ''} ${dropTargetIndex === index ? 'grocery-list-item-drop-target' : ''}`}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, index)}
+                        data-drop-id={String(index)}
+                        className={`grocery-list-item ${item.is_section_header ? 'grocery-list-item-section' : ''} ${!item.is_section_header && item.is_checked ? 'grocery-list-item-checked' : ''} ${activeId === String(index) ? 'grocery-list-item-dragging' : ''} ${overId === String(index) && activeId && activeId !== String(index) ? 'grocery-list-item-drop-target' : ''}`}
                       >
                         <span
                           className="grocery-list-item-drag-handle"
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, index)}
-                          onDragEnd={handleDragEnd}
+                          {...bindHandle(index, index)}
                           aria-label="Drag to reorder"
                           title="Drag to reorder"
                         >
@@ -429,6 +409,25 @@ export default function GroceryLists({ householdId, myMemberId }) {
           )}
         </>
       )}
+      <AppDialog
+        open={listDialog?.type === 'prompt'}
+        title="New grocery list"
+        message="Store or list name (e.g. Costco)"
+        prompt
+        promptLabel="List name"
+        confirmLabel="Add"
+        onCancel={() => setListDialog(null)}
+        onConfirm={submitNewList}
+      />
+      <AppDialog
+        open={listDialog?.type === 'confirm-delete'}
+        title="Remove grocery list"
+        message="Remove this list and all its items?"
+        confirmLabel="Remove"
+        danger
+        onCancel={() => setListDialog(null)}
+        onConfirm={confirmDeleteList}
+      />
     </div>
   )
 }

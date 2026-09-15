@@ -27,6 +27,7 @@ import {
   deleteMealSlot,
 } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import AppDialog from '../components/AppDialog'
 import './Dashboard.css'
 
 export default function Settings() {
@@ -48,6 +49,7 @@ export default function Settings() {
   const [membersByHousehold, setMembersByHousehold] = useState({}) // householdId -> list of members (with user)
   const [myCalendars, setMyCalendars] = useState([])
   const [mealSlotsByHousehold, setMealSlotsByHousehold] = useState({})
+  const [dialog, setDialog] = useState(null)
   const [newMealSlotName, setNewMealSlotName] = useState('')
   const [showPendingInviteBanner, setShowPendingInviteBanner] = useState(false)
 
@@ -211,17 +213,24 @@ export default function Settings() {
     }
   }
 
-  const handleDeleteInvite = async (invitationId, email) => {
-    if (!window.confirm(`Remove the invitation for ${email}? They will no longer be able to use the invite link.`)) return
-    setError('')
-    setSuccess('')
-    try {
-      await deleteInvitation(invitationId)
-      setSuccess('Invitation removed.')
-      load()
-    } catch (e) {
-      setError(e.response?.data?.detail || e.message)
-    }
+  const handleDeleteInvite = (invitationId, email) => {
+    setDialog({
+      title: 'Remove invitation',
+      message: `Remove the invitation for ${email}? They will no longer be able to use the invite link.`,
+      confirmLabel: 'Remove',
+      onConfirm: async () => {
+        setDialog(null)
+        setError('')
+        setSuccess('')
+        try {
+          await deleteInvitation(invitationId)
+          setSuccess('Invitation removed.')
+          load()
+        } catch (e) {
+          setError(e.response?.data?.detail || e.message)
+        }
+      },
+    })
   }
 
   const handleAcceptMyInvite = async (invite) => {
@@ -237,34 +246,48 @@ export default function Settings() {
     }
   }
 
-  const handleDeclineMyInvite = async (invite) => {
-    if (!window.confirm(`Decline invitation to ${invite.household_name || 'this household'}?`)) return
-    setError('')
-    setSuccess('')
-    try {
-      await declineMyPendingInvitation(invite.id)
-      setSuccess('Invitation deleted.')
-      load()
-    } catch (e) {
-      setError(e.response?.data?.detail || e.message)
-    }
+  const handleDeclineMyInvite = (invite) => {
+    setDialog({
+      title: 'Decline invitation',
+      message: `Decline invitation to ${invite.household_name || 'this household'}?`,
+      confirmLabel: 'Decline',
+      onConfirm: async () => {
+        setDialog(null)
+        setError('')
+        setSuccess('')
+        try {
+          await declineMyPendingInvitation(invite.id)
+          setSuccess('Invitation deleted.')
+          load()
+        } catch (e) {
+          setError(e.response?.data?.detail || e.message)
+        }
+      },
+    })
   }
 
-  const handleRemoveMember = async (householdId, memberId, displayName) => {
-    if (!window.confirm(`Remove ${displayName} from this household? They will lose access to the household.`)) return
-    setError('')
-    setSuccess('')
-    try {
-      await deleteMember(memberId)
-      setMembersByHousehold((prev) => ({
-        ...prev,
-        [householdId]: (prev[householdId] || []).filter((m) => m.id !== memberId),
-      }))
-      setSuccess('Member removed from household.')
-      load()
-    } catch (e) {
-      setError(e.response?.data?.detail || e.message)
-    }
+  const handleRemoveMember = (householdId, memberId, displayName) => {
+    setDialog({
+      title: 'Remove member',
+      message: `Remove ${displayName} from this household? They will lose access to the household.`,
+      confirmLabel: 'Remove',
+      onConfirm: async () => {
+        setDialog(null)
+        setError('')
+        setSuccess('')
+        try {
+          await deleteMember(memberId)
+          setMembersByHousehold((prev) => ({
+            ...prev,
+            [householdId]: (prev[householdId] || []).filter((m) => m.id !== memberId),
+          }))
+          setSuccess('Member removed from household.')
+          load()
+        } catch (e) {
+          setError(e.response?.data?.detail || e.message)
+        }
+      },
+    })
   }
 
   const handleAddCalendar = async (e) => {
@@ -302,17 +325,24 @@ export default function Settings() {
     }
   }
 
-  const handleRemoveCalendar = async (calendar) => {
-    if (!window.confirm(`Remove "${calendar.name}" from this household? It will stay in your Google account; only the link here is removed.`)) return
-    setError('')
-    try {
-      await deleteCalendar(calendar.id)
-      setMyCalendars((prev) => prev.filter((c) => c.id !== calendar.id))
-      setSuccess('Calendar removed from household.')
-      setTimeout(() => setSuccess(''), 2000)
-    } catch (e) {
-      setError(e.response?.data?.detail || e.message)
-    }
+  const handleRemoveCalendar = (calendar) => {
+    setDialog({
+      title: 'Remove calendar',
+      message: `Remove "${calendar.name}" from this household? It will stay in your Google account; only the link here is removed.`,
+      confirmLabel: 'Remove',
+      onConfirm: async () => {
+        setDialog(null)
+        setError('')
+        try {
+          await deleteCalendar(calendar.id)
+          setMyCalendars((prev) => prev.filter((c) => c.id !== calendar.id))
+          setSuccess('Calendar removed from household.')
+          setTimeout(() => setSuccess(''), 2000)
+        } catch (e) {
+          setError(e.response?.data?.detail || e.message)
+        }
+      },
+    })
   }
 
   const handleMealPlannerWeeksChange = async (householdId, weeks) => {
@@ -349,20 +379,27 @@ export default function Settings() {
     }
   }
 
-  const handleDeleteMealSlot = async (slot) => {
-    if (!window.confirm(`Remove "${slot.name}"? Planned meals for this slot will be removed.`)) return
-    setError('')
-    try {
-      await deleteMealSlot(slot.id)
-      setMealSlotsByHousehold((prev) => ({
-        ...prev,
-        [slot.household_id]: (prev[slot.household_id] || []).filter((s) => s.id !== slot.id),
-      }))
-      setSuccess('Meal type removed.')
-      setTimeout(() => setSuccess(''), 2000)
-    } catch (e) {
-      setError(e.response?.data?.detail || e.message)
-    }
+  const handleDeleteMealSlot = (slot) => {
+    setDialog({
+      title: 'Remove meal type',
+      message: `Remove "${slot.name}"? Planned meals for this slot will be removed.`,
+      confirmLabel: 'Remove',
+      onConfirm: async () => {
+        setDialog(null)
+        setError('')
+        try {
+          await deleteMealSlot(slot.id)
+          setMealSlotsByHousehold((prev) => ({
+            ...prev,
+            [slot.household_id]: (prev[slot.household_id] || []).filter((s) => s.id !== slot.id),
+          }))
+          setSuccess('Meal type removed.')
+          setTimeout(() => setSuccess(''), 2000)
+        } catch (e) {
+          setError(e.response?.data?.detail || e.message)
+        }
+      },
+    })
   }
 
   const applyMemberColorLocally = (memberId, hex, householdId) => {
@@ -418,26 +455,29 @@ export default function Settings() {
     </div>
   )
 
-  const handleDeleteHousehold = async () => {
+  const handleDeleteHousehold = () => {
     const hid = selectedHouseholdId ? parseInt(selectedHouseholdId, 10) : null
-    if (!hid || !selectedHousehold) return
-    const name = selectedHousehold.name
-    if (
-      !window.confirm(
-        `Permanently delete the household "${name}" and all its data (members, calendars, meals, todos, grocery lists)? This cannot be undone.`
-      )
-    )
-      return
-    setError('')
-    setSuccess('')
-    try {
-      await deleteHousehold(hid)
-      setSelectedHouseholdId(households.length > 1 ? String(households.find((h) => h.id !== hid)?.id ?? '') : '')
-      setSuccess('Household deleted.')
-      load()
-    } catch (e) {
-      setError(e.response?.data?.detail || e.message)
-    }
+    const household = households.find((h) => h.id === hid)
+    if (!hid || !household) return
+    const name = household.name
+    setDialog({
+      title: 'Delete household',
+      message: `Permanently delete the household "${name}" and all its data (members, calendars, meals, todos, grocery lists)? This cannot be undone.`,
+      confirmLabel: 'Delete household',
+      onConfirm: async () => {
+        setDialog(null)
+        setError('')
+        setSuccess('')
+        try {
+          await deleteHousehold(hid)
+          setSelectedHouseholdId(households.length > 1 ? String(households.find((h) => h.id !== hid)?.id ?? '') : '')
+          setSuccess('Household deleted.')
+          load()
+        } catch (e) {
+          setError(e.response?.data?.detail || e.message)
+        }
+      },
+    })
   }
 
   if (loading) return <div className="dashboard-loading">Loading…</div>
@@ -812,6 +852,15 @@ export default function Settings() {
           </button>
         </section>
       )}
+      <AppDialog
+        open={Boolean(dialog)}
+        title={dialog?.title}
+        message={dialog?.message}
+        confirmLabel={dialog?.confirmLabel || 'Remove'}
+        danger
+        onCancel={() => setDialog(null)}
+        onConfirm={dialog?.onConfirm}
+      />
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   listMealSlots,
   listPlannedMeals,
@@ -7,18 +7,17 @@ import {
   deletePlannedMeal,
   swapPlannedMeals,
 } from '../services/api'
+import usePointerDrag from '../hooks/usePointerDrag'
 import './MealPlanner.css'
 
 const ISO_DATE = (d) => d.toISOString().slice(0, 10)
-const DRAG_MEAL_TYPE = 'application/x-lionfish-meal'
+const mealDropId = (dateStr, slotId) => `${dateStr}|${slotId}`
 
 export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks = 2, householdMembers = [] }) {
   const [slots, setSlots] = useState([])
   const [meals, setMeals] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [draggingFrom, setDraggingFrom] = useState(null)
-  const [dropTarget, setDropTarget] = useState(null)
   const [startDate, setStartDate] = useState(() => {
     const d = new Date()
     const day = d.getDay()
@@ -123,62 +122,36 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
     }
   }
 
-  const handleDragStart = (e, meal, dateStr, slotId) => {
-    if (!meal) return
-    e.dataTransfer.setData(DRAG_MEAL_TYPE, JSON.stringify({
-      dateStr,
-      slotId,
-      mealId: meal.id,
-    }))
-    e.dataTransfer.effectAllowed = 'move'
-    setDraggingFrom({ dateStr, slotId })
-  }
-
-  const handleDragEnd = () => {
-    setDraggingFrom(null)
-    setDropTarget(null)
-  }
-
-  const handleDragOver = (e, dateStr, slotId) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    setDropTarget({ dateStr, slotId })
-  }
-
-  const handleDragLeave = (e) => {
-    if (!e.currentTarget.contains(e.relatedTarget)) setDropTarget(null)
-  }
-
-  const handleDrop = async (e, targetDateStr, targetSlotId) => {
-    e.preventDefault()
-    setDropTarget(null)
-    setDraggingFrom(null)
-    const raw = e.dataTransfer.getData(DRAG_MEAL_TYPE)
-    if (!raw) return
-    let payload
-    try {
-      payload = JSON.parse(raw)
-    } catch {
-      return
-    }
-    const { dateStr: sourceDateStr, slotId: sourceSlotId, mealId: sourceMealId } = payload
-    if (sourceDateStr === targetDateStr && sourceSlotId === targetSlotId) return
-    const targetMeal = getMealFor(targetDateStr, targetSlotId)
-    setError('')
-    try {
-      if (targetMeal) {
-        await swapPlannedMeals(sourceMealId, targetMeal.id)
-      } else {
-        await updatePlannedMeal(sourceMealId, {
-          meal_date: targetDateStr,
-          meal_slot_id: targetSlotId,
-        })
+  const applyMealDrop = useCallback(
+    async (payload, targetId) => {
+      const sep = targetId.indexOf('|')
+      if (sep < 0) return
+      const targetDateStr = targetId.slice(0, sep)
+      const targetSlotId = Number(targetId.slice(sep + 1))
+      const { dateStr: sourceDateStr, slotId: sourceSlotId, mealId: sourceMealId } = payload
+      if (sourceDateStr === targetDateStr && Number(sourceSlotId) === targetSlotId) return
+      const targetMeal = meals.find(
+        (m) => m.meal_date === targetDateStr && Number(m.meal_slot_id) === targetSlotId
+      )
+      setError('')
+      try {
+        if (targetMeal) {
+          await swapPlannedMeals(sourceMealId, targetMeal.id)
+        } else {
+          await updatePlannedMeal(sourceMealId, {
+            meal_date: targetDateStr,
+            meal_slot_id: targetSlotId,
+          })
+        }
+        if (loadRef.current) await loadRef.current()
+      } catch (err) {
+        setError(err.response?.data?.detail || err.message)
       }
-      if (loadRef.current) await loadRef.current()
-    } catch (err) {
-      setError(err.response?.data?.detail || err.message)
-    }
-  }
+    },
+    [meals]
+  )
+
+  const { activeId, overId, bindHandle } = usePointerDrag(applyMealDrop)
 
   if (!householdId) {
     return (
@@ -212,19 +185,16 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
     const meal = getMealFor(dateStr, slot.id)
     const editing = isEditing(dateStr, slot.id)
     const label = meal ? (meal.description || '—') : null
-    const isDraggingFrom =
-      draggingFrom?.dateStr === dateStr && draggingFrom?.slotId === slot.id
-    const isDropTarget =
-      dropTarget?.dateStr === dateStr && dropTarget?.slotId === slot.id
+    const cellId = mealDropId(dateStr, slot.id)
+    const isDraggingFrom = activeId === cellId
+    const isDropTarget = overId === cellId && activeId && activeId !== cellId
     const canDrag = !!meal
     return (
       <td
         key={`${dateStr}-${slot.id}`}
+        data-drop-id={cellId}
         className={`meal-planner-cell meal-planner-cell-meal${isDraggingFrom ? ' meal-planner-cell-dragging' : ''}${isDropTarget ? ' meal-planner-cell-drop-target' : ''}`}
         onClick={() => !editing && startEditing(dateStr, slot.id)}
-        onDragOver={(e) => handleDragOver(e, dateStr, slot.id)}
-        onDragLeave={handleDragLeave}
-        onDrop={(e) => handleDrop(e, dateStr, slot.id)}
       >
         {editing ? (
           <input
@@ -247,9 +217,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
             {canDrag && (
               <span
                 className="meal-planner-drag-handle"
-                draggable
-                onDragStart={(e) => handleDragStart(e, meal, dateStr, slot.id)}
-                onDragEnd={handleDragEnd}
+                {...bindHandle(cellId, { dateStr, slotId: slot.id, mealId: meal.id })}
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Drag to move or swap meal"
                 title="Drag to move or swap"

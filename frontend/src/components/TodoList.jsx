@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { listTodos, createTodo, updateTodo, deleteTodo } from '../services/api'
 import ConfirmDeleteButton from './ConfirmDeleteButton'
+import usePointerDrag, { persistReorder } from '../hooks/usePointerDrag'
 import './TodoList.css'
 
 export default function TodoList({ householdId, households = [] }) {
@@ -87,53 +88,22 @@ export default function TodoList({ householdId, households = [] }) {
     }
   }
 
-  const [draggedIndex, setDraggedIndex] = useState(null)
-  const [dropTargetIndex, setDropTargetIndex] = useState(null)
+  const applyReorder = useCallback(
+    async (fromIndex, toId) => {
+      const toIndex = Number(toId)
+      setError('')
+      try {
+        const reordered = await persistReorder(items, fromIndex, toIndex, updateTodo)
+        setItems(reordered)
+      } catch (err) {
+        setError(err.response?.data?.detail || err.message)
+        load()
+      }
+    },
+    [items, load]
+  )
 
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index)
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', String(index))
-    e.dataTransfer.setData('application/json', JSON.stringify({ index }))
-  }
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null)
-    setDropTargetIndex(null)
-  }
-
-  const handleDragOver = (e, index) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    if (draggedIndex === null || draggedIndex === index) return
-    setDropTargetIndex(index)
-  }
-
-  const handleDragLeave = () => {
-    setDropTargetIndex(null)
-  }
-
-  const handleDrop = async (e, dropIndex) => {
-    e.preventDefault()
-    setDropTargetIndex(null)
-    const dragIndex = draggedIndex
-    setDraggedIndex(null)
-    if (dragIndex == null || dragIndex === dropIndex) return
-    const reordered = [...items]
-    const [removed] = reordered.splice(dragIndex, 1)
-    reordered.splice(dropIndex, 0, removed)
-    setItems(reordered)
-    setError('')
-    const toUpdate = reordered
-      .map((item, idx) => (item.position !== idx ? { item, newPosition: idx } : null))
-      .filter(Boolean)
-    try {
-      await Promise.all(toUpdate.map(({ item, newPosition }) => updateTodo(item.id, { position: newPosition })))
-    } catch (err) {
-      setError(err.response?.data?.detail || err.message)
-      load()
-    }
-  }
+  const { activeId, overId, bindHandle } = usePointerDrag(applyReorder)
 
   if (!householdId) {
     return (
@@ -155,16 +125,12 @@ export default function TodoList({ householdId, households = [] }) {
             {items.map((item, index) => (
               <li
                 key={item.id}
-                className={`todo-item ${item.is_section_header ? 'todo-item-section' : ''} ${item.is_checked ? 'todo-item-checked' : ''} ${draggedIndex === index ? 'todo-item-dragging' : ''} ${dropTargetIndex === index ? 'todo-item-drop-target' : ''}`}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, index)}
+                data-drop-id={String(index)}
+                className={`todo-item ${item.is_section_header ? 'todo-item-section' : ''} ${item.is_checked ? 'todo-item-checked' : ''} ${activeId === String(index) ? 'todo-item-dragging' : ''} ${overId === String(index) && activeId && activeId !== String(index) ? 'todo-item-drop-target' : ''}`}
               >
                 <span
                   className="todo-item-drag-handle"
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, index)}
-                  onDragEnd={handleDragEnd}
+                  {...bindHandle(index, index)}
                   aria-label="Drag to reorder"
                   title="Drag to reorder"
                 >

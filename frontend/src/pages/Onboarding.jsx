@@ -10,6 +10,7 @@ import {
   deleteCalendar,
 } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import AppDialog from '../components/AppDialog'
 import './Onboarding.css'
 
 const DEFAULT_PASTEL_COLORS = [
@@ -34,6 +35,7 @@ export default function Onboarding() {
   const [myCalendars, setMyCalendars] = useState([])
   const [selectedGoogleCalendarId, setSelectedGoogleCalendarId] = useState('')
   const [addingCalendar, setAddingCalendar] = useState(false)
+  const [removeCalendarDialog, setRemoveCalendarDialog] = useState(null)
 
   const loadHouseholdAndMember = useCallback(async () => {
     if (!householdId || !user) return
@@ -122,8 +124,14 @@ export default function Onboarding() {
     }
   }
 
-  const handleRemoveCalendar = async (cal) => {
-    if (!window.confirm(`Remove "${cal.name}" from this household?`)) return
+  const handleRemoveCalendar = (cal) => {
+    setRemoveCalendarDialog(cal)
+  }
+
+  const confirmRemoveCalendar = async () => {
+    const cal = removeCalendarDialog
+    setRemoveCalendarDialog(null)
+    if (!cal) return
     setError('')
     try {
       await deleteCalendar(cal.id)
@@ -267,6 +275,15 @@ export default function Onboarding() {
           </div>
         </div>
       </main>
+      <AppDialog
+        open={Boolean(removeCalendarDialog)}
+        title="Remove calendar"
+        message={`Remove "${removeCalendarDialog?.name}" from this household?`}
+        confirmLabel="Remove"
+        danger
+        onCancel={() => setRemoveCalendarDialog(null)}
+        onConfirm={confirmRemoveCalendar}
+      />
     </div>
   )
 }
