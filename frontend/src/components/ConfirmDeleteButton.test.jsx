@@ -1,5 +1,5 @@
 import React from 'react'
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import ConfirmDeleteButton from './ConfirmDeleteButton'
@@ -60,17 +60,21 @@ describe('ConfirmDeleteButton', () => {
     expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
   })
 
-  it('restores the trash icon after the timeout', async () => {
+  it('restores the trash icon after the timeout', () => {
     vi.useFakeTimers()
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     const onConfirm = vi.fn()
     render(<ConfirmDeleteButton onConfirm={onConfirm} timeoutMs={400} />)
 
-    await user.click(screen.getByRole('button', { name: 'Delete' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
     expect(screen.getByRole('button', { name: 'Confirm delete' })).toBeInTheDocument()
 
     act(() => {
-      vi.advanceTimersByTime(400)
+      vi.advanceTimersByTime(399)
+    })
+    expect(screen.getByRole('button', { name: 'Confirm delete' })).toBeInTheDocument()
+
+    act(() => {
+      vi.advanceTimersByTime(1)
     })
 
     expect(onConfirm).not.toHaveBeenCalled()
@@ -98,6 +102,27 @@ describe('ConfirmDeleteButton', () => {
     expect(screen.getAllByRole('button', { name: 'Confirm delete' })).toHaveLength(1)
     expect(firstConfirm).not.toHaveBeenCalled()
     expect(secondConfirm).not.toHaveBeenCalled()
+  })
+
+  it('ignores non-Escape keys while pending', async () => {
+    const user = userEvent.setup()
+    const onConfirm = vi.fn()
+    render(<ConfirmDeleteButton onConfirm={onConfirm} />)
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+    await user.keyboard('a')
+
+    expect(screen.getByRole('button', { name: 'Confirm delete' })).toBeInTheDocument()
+    expect(onConfirm).not.toHaveBeenCalled()
+  })
+
+  it('focuses the confirm action when armed', async () => {
+    const user = userEvent.setup()
+    render(<ConfirmDeleteButton onConfirm={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+
+    expect(screen.getByRole('button', { name: 'Confirm delete' })).toHaveFocus()
   })
 
   it('stops click propagation so parent handlers do not fire', async () => {
