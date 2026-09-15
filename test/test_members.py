@@ -82,7 +82,7 @@ def _headers(user):
     return {"Authorization": f"Bearer {token}"}
 
 
-def test_owner_can_change_another_members_color(client, owner_user, other_membership):
+def test_owner_can_change_another_members_color(client, owner_user, owner_membership, other_membership):
     r = client.patch(
         f"/api/members/{other_membership.id}",
         json={"event_color": "#aabbcc"},
@@ -92,7 +92,7 @@ def test_owner_can_change_another_members_color(client, owner_user, other_member
     assert r.json()["event_color"] == "#aabbcc"
 
 
-def test_member_cannot_change_another_members_color(client, member_user, owner_membership):
+def test_member_cannot_change_another_members_color(client, member_user, owner_membership, other_membership):
     r = client.patch(
         f"/api/members/{owner_membership.id}",
         json={"event_color": "#aabbcc"},
