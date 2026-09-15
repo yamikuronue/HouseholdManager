@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { listTodos, createTodo, updateTodo, deleteTodo } from '../services/api'
+import ConfirmDeleteButton from './ConfirmDeleteButton'
 import './TodoList.css'
 
 export default function TodoList({ householdId, households = [] }) {
@@ -76,9 +77,7 @@ export default function TodoList({ householdId, households = [] }) {
     }
   }
 
-  const handleDelete = async (item, e) => {
-    e.stopPropagation()
-    if (!window.confirm('Remove this item?')) return
+  const handleDelete = async (item) => {
     setError('')
     try {
       await deleteTodo(item.id)
@@ -174,15 +173,12 @@ export default function TodoList({ householdId, households = [] }) {
                 {item.is_section_header ? (
                   <>
                     <span className="todo-item-section-text">{item.content || 'Section'}</span>
-                    <button
-                      type="button"
+                    <ConfirmDeleteButton
                       className="todo-item-delete"
-                      onClick={(e) => handleDelete(item, e)}
-                      aria-label="Delete section"
-                      title="Remove section"
-                    >
-                      🗑
-                    </button>
+                      idleLabel="Delete section"
+                      idleTitle="Remove section"
+                      onConfirm={() => handleDelete(item)}
+                    />
                   </>
                 ) : (
                   <>
@@ -214,15 +210,12 @@ export default function TodoList({ householdId, households = [] }) {
                     >
                       {item.content || 'New item'}
                     </span>
-                    <button
-                      type="button"
+                    <ConfirmDeleteButton
                       className="todo-item-delete"
-                      onClick={(e) => handleDelete(item, e)}
-                      aria-label="Delete"
-                      title="Remove item"
-                    >
-                      🗑
-                    </button>
+                      idleLabel="Delete"
+                      idleTitle="Remove item"
+                      onConfirm={() => handleDelete(item)}
+                    />
                   </>
                 )}
               </li>
