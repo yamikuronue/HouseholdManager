@@ -5,9 +5,9 @@ This document summarizes how the app aligns with **WCAG 2.1 Level AA** and moder
 ## Implemented
 
 - **Skip link** (2.4.1 Bypass Blocks): "Skip to main content" at top; visible on focus.
-- **Focus visible** (2.4.7): Visible focus styles on calendar search, meal planner input, delete household button.
-- **Live regions**: Error messages use `role="alert"`; success use `role="status"` and `aria-live="polite"`.
-- **Keyboard** (2.1.1): Todo item label activates on Enter and Space; grocery tabs support Arrow Left/Right, Home, End.
+- **Focus visible** (2.4.7): Visible focus styles on calendar search, meal planner input, delete household button, and in-row delete confirm actions.
+- **Live regions**: Error messages use `role="alert"`; success use `role="status"` and `aria-live="polite"`. Trash-can delete announces “Confirm delete?” politely when armed.
+- **Keyboard** (2.1.1): Todo item label activates on Enter and Space; grocery tabs support Arrow Left/Right, Home, End. Trash-can delete on to-do and grocery items is a two-tap in-row confirm (not a native `window.confirm` dialog): Enter/Space on the trash icon arms Delete/Cancel, Enter/Space on Delete removes the item, and Escape (or Cancel, or a 5s timeout) restores the trash icon.
 - **Modal focus trap**: Calendar "Add event" and event popover dialogs trap focus, close on Escape, and restore focus on close; `aria-modal="true"`.
 - **Grocery tabs**: Full tab pattern with `role="tablist"`, `role="tab"`, `role="tabpanel"`, `aria-controls`/`id`/`aria-labelledby`, and arrow-key navigation.
 - **Page titles** (2.4.2): Per-route document titles (e.g. "Dashboard - Lionfish", "Settings - Lionfish"); cleanup restores "Lionfish".

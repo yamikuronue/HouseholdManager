@@ -1,0 +1,76 @@
+.confirm-delete-idle {
+  flex-shrink: 0;
+  padding: 0.2rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5;
+  font-size: 1rem;
+}
+
+.confirm-delete-idle:hover,
+.confirm-delete-idle:focus-visible {
+  opacity: 1;
+}
+
+.confirm-delete-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.confirm-delete-confirm,
+.confirm-delete-cancel {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.confirm-delete-confirm {
+  background: #c62828;
+  color: #fff;
+  border: 1px solid #b71c1c;
+}
+
+.confirm-delete-confirm:hover,
+.confirm-delete-confirm:focus-visible {
+  background: #b71c1c;
+}
+
+.confirm-delete-cancel {
+  background: transparent;
+  color: #555;
+  border: 1px solid #ccc;
+}
+
+.confirm-delete-cancel:hover,
+.confirm-delete-cancel:focus-visible {
+  background: #f0f0f0;
+}
+
+.vis-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 480px) {
+  .confirm-delete-confirm,
+  .confirm-delete-cancel {
+    padding: 0.4rem 0.5rem;
+  }
+}

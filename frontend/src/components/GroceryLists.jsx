@@ -8,6 +8,7 @@ import {
   updateGroceryListItem,
   deleteGroceryListItem,
 } from '../services/api'
+import ConfirmDeleteButton from './ConfirmDeleteButton'
 import './GroceryLists.css'
 
 export default function GroceryLists({ householdId, myMemberId }) {
@@ -133,9 +134,7 @@ export default function GroceryLists({ householdId, myMemberId }) {
     }
   }
 
-  const handleDeleteItem = async (item, e) => {
-    e.stopPropagation()
-    if (!window.confirm('Remove this item?')) return
+  const handleDeleteItem = async (item) => {
     setError('')
     try {
       await deleteGroceryListItem(item.id)
@@ -326,14 +325,12 @@ export default function GroceryLists({ householdId, myMemberId }) {
                             <span className="grocery-list-item-section-text">
                               {item.content || 'Section'}
                             </span>
-                            <button
-                              type="button"
+                            <ConfirmDeleteButton
                               className="grocery-list-item-delete"
-                              onClick={(e) => handleDeleteItem(item, e)}
-                              aria-label="Delete section"
-                            >
-                              🗑
-                            </button>
+                              idleLabel="Delete section"
+                              idleTitle="Remove section"
+                              onConfirm={() => handleDeleteItem(item)}
+                            />
                           </>
                         ) : (
                           <>
@@ -365,14 +362,12 @@ export default function GroceryLists({ householdId, myMemberId }) {
                             >
                               {item.content || 'New item'}
                             </span>
-                            <button
-                              type="button"
+                            <ConfirmDeleteButton
                               className="grocery-list-item-delete"
-                              onClick={(e) => handleDeleteItem(item, e)}
-                              aria-label="Delete"
-                            >
-                              🗑
-                            </button>
+                              idleLabel="Delete"
+                              idleTitle="Remove item"
+                              onConfirm={() => handleDeleteItem(item)}
+                            />
                           </>
                         )}
                       </li>
