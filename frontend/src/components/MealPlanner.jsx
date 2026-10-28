@@ -10,7 +10,14 @@ import {
 import usePointerDrag from '../hooks/usePointerDrag'
 import './MealPlanner.css'
 
-const ISO_DATE = (d) => d.toISOString().slice(0, 10)
+// Dates are calendar days in the user's local time zone; never route through UTC
+// (toISOString) or days get skipped/duplicated around DST changes.
+const ISO_DATE = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const parseLocalDate = (dateStr) => {
+  const [y, m, day] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, day)
+}
 const mealDropId = (dateStr, slotId) => `${dateStr}|${slotId}`
 
 export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks = 2, householdMembers = [] }) {
@@ -19,10 +26,9 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [startDate, setStartDate] = useState(() => {
-    const d = new Date()
-    const day = d.getDay()
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-    return new Date(d.setDate(diff))
+    const now = new Date()
+    const day = now.getDay()
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + (day === 0 ? -6 : 1))
   })
 
   const numDays = mealPlannerWeeks * 7
@@ -174,7 +180,7 @@ export default function MealPlanner({ householdId, myMemberId, mealPlannerWeeks 
   }
 
   const formatDateParts = (dateStr) => {
-    const d = new Date(dateStr + 'Z')
+    const d = parseLocalDate(dateStr)
     return {
       weekday: d.toLocaleDateString(undefined, { weekday: 'short' }),
       dateLine: d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
