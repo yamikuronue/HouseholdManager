@@ -196,7 +196,10 @@ API documentation available at `http://localhost:8000/docs` when running.
 ### Running Tests
 ```bash
 python -m pytest test/
+cd frontend && npm test
 ```
+
+GitHub Actions (`.github/workflows/tests.yml`) runs both suites and a frontend build on every pull request and on pushes to `main`.
 
 ### Database migrations
 On every app startup the app runs **Alembic** (`alembic upgrade head`) and then **create_all** for any missing tables. So the database is updated automatically when the app connects (e.g. on DigitalOcean deploy).
