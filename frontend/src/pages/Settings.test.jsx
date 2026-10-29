@@ -4,9 +4,12 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('../context/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 1 } }),
-}))
+// Must be a stable object: Settings reloads whenever `user` changes identity,
+// so a fresh object per render loops forever.
+vi.mock('../context/AuthContext', () => {
+  const auth = { user: { id: 1 } }
+  return { useAuth: () => auth }
+})
 
 vi.mock('../services/api', () => ({
   listHouseholds: vi.fn(),

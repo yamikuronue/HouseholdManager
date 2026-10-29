@@ -39,7 +39,7 @@ describe('MealPlanner dates across DST change', () => {
   ])('lists every day with correct labels when loaded in the %s', async (_label, now) => {
     vi.setSystemTime(now)
     render(<MealPlanner householdId={7} myMemberId={1} mealPlannerWeeks={2} />)
-    await screen.findByText('Dinner', { selector: 'th' })
+    await screen.findAllByText('Dinner', { selector: 'th' })
 
     expect(renderedDates()).toEqual([
       '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01',
